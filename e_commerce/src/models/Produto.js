@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import "../utils/validadorGlobal.js"
 
 const produtoSchema = new mongoose.Schema({
     id: {type: String},

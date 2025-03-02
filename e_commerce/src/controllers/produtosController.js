@@ -51,7 +51,7 @@ class ProdutoController{
         }
     }
 
-    static cadastrarProduto = async(req, res , next) =>{
+    static cadastrarProduto = async(req, res, next) =>{
         try{
             let produto = new produtos(req.body);
 
@@ -60,6 +60,7 @@ class ProdutoController{
             res.status(201).json(produtoResultado);
         } catch(erro){
             console.error(erro);
+            next(erro);
         }
     }
 
