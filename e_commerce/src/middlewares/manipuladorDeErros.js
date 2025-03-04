@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import ErroValidacao from "../erros/ErroValidacao.js";
+import ErroBase from "../erros/erroBase.js";
 
 function manipuladorDeErros(erro, req, res, next) {
   if (erro instanceof mongoose.Error.ValidationError){
@@ -7,13 +8,16 @@ function manipuladorDeErros(erro, req, res, next) {
   }
 
   else if (erro instanceof mongoose.Error.CastError) {
-    return res.status(400).json({
-      message: `O campo "${erro.path}" recebeu um valor inválido.`
-    });
+    return new ErroConversaoDeTipo(erro).enviarResposta(res);
   }
 
-  // Outros erros
-  return res.status(500).json({ message: 'Erro interno do servidor.' });
+  else if(erro instanceof ErroBase){
+    return erro.enviarResposta(res);
+  }
+  
+  else{
+    return new ErroBase().enviarResposta(res);
+  }
 }
 
 export default manipuladorDeErros;
