@@ -1,3 +1,4 @@
+import NaoEncontrado from "../erros/NaoEncontrado.js";
 import produtos from "../models/Produto.js"
 import formatarMensagens from "../utils/formatarMensagens.js";
 
@@ -26,7 +27,7 @@ class ProdutoController{
           if (erros.length > 0) {
             // Formata a mensagem unindo com "; " e finalizando com "."
             const mensagemFinal = formatarMensagens(erros);
-            return res.status(404).json({ message: mensagemFinal });
+            throw new NaoEncontrado(mensagemFinal);
           }
           
           // 3. Se todas as verificações passarem, constrói a busca combinada
@@ -49,10 +50,10 @@ class ProdutoController{
             if(produtoResultado !== null){
                 res.status(200).json(produtoResultado);
             } else{
-                res.status(404).send({message: `produto com id igual a ${id} não encontrado`});
+              throw new NaoEncontrado(`Produto com id igual a ${id} não encontrado`);
             }
         } catch(erro){
-            console.error(erro);
+            next(erro);
         }
     }
 
@@ -80,10 +81,10 @@ class ProdutoController{
                     message: `Livro com id igual a ${id} atualizado com sucesso`,
                     data: produtoResultado});
             } else{
-                res.status(404).send({message: `produto com id igual a ${id} não encontrado`});
+                throw new NaoEncontrado(`produto com id igual a ${id} não encontrado`);
             }
         } catch(erro){
-            console.error(erro);
+            next(erro);
         }
     }
 
@@ -99,10 +100,10 @@ class ProdutoController{
                     data: produtoResultado
                 });
             } else{
-                res.status(400).send({message: `produto com id igual a ${id} não encontrado`});
+                throw new NaoEncontrado(`produto com id igual a ${id} não encontrado`);
             }
         } catch(erro){
-            console.error(erro);
+            next(erro);
         }
     }   
 }
