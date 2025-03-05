@@ -166,7 +166,6 @@ export async function verificarFiltroEstoque(queryParams) {
   return null;
 }
 
-
 async function processaBusca(parametros){
     const {nome, minPreco, maxPreco, minEstoque, maxEstoque} = parametros;
 
