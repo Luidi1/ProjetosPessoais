@@ -5,9 +5,11 @@ import formatarMensagens from "../utils/formatarMensagens.js";
 class ProdutoController{
     static listarProdutos = async(req, res, next) =>{
         try{
-            const resultadoProdutos = await produtos.find()
+            const resultadoProdutos = produtos.find()
 
-            res.status(200).json(resultadoProdutos);
+            req.resultado = resultadoProdutos;
+
+            next();
         } catch(erro){
             console.error(erro);
         }
@@ -32,9 +34,10 @@ class ProdutoController{
           
           // 3. Se todas as verificações passarem, constrói a busca combinada
           const busca = await processaBusca(req.query);
-          const resultadoProdutos = await produtos.find(busca);
-          return res.status(200).json(resultadoProdutos);
-          
+          const resultadoProdutos = produtos.find(busca);
+          req.resultado = resultadoProdutos;
+
+          next();
         } catch (erro) {
           console.error(erro);
           next(erro);
