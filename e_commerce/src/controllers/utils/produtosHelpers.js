@@ -1,3 +1,5 @@
+import produtos from "../../models/Produto.js";
+
 // Parâmetros que a função processaBusca aceita
 export const PARAMS_PRODUTOS = [
     "nome",
@@ -85,21 +87,3 @@ export async function processaBusca(parametros){
     return busca;
 
 }
-
-// Supondo que PARAMS_ACEITOS seja um array com os nomes de parâmetros aceitos
-export function verificarParametrosPermitidos(queryParams, PARAMS_ACEITOS) {
-    const recebidos = Object.keys(queryParams);
-    const desconhecidos = recebidos.filter(param => !PARAMS_ACEITOS.includes(param));
-  
-    if (desconhecidos.length === 0) {
-      return null;
-    }
-  
-    if (desconhecidos.length === 1) {
-      return `O parâmetro "${desconhecidos[0]}" informado não existe.`;
-    } else {
-      // Junta os nomes entre aspas duplas separados por vírgula
-      return `Os parâmetros "${desconhecidos.join('", "')}" informados não existem.`;
-    }
-  }
-  

@@ -7,8 +7,8 @@ import gerarVerificadorParametros from "../middlewares/gerarVerificadorParametro
 const router = express.Router();
 
 router
-    .get("/produtos", gerarVerificadorParametros(PARAMS_PAGINACAO, PARAMS_PRODUTOS), ProdutoController.listarProdutos, paginar)
-    .get("/produtos/busca", ProdutoController.listarProdutoPorFiltro, paginar)
+    .get("/produtos", gerarVerificadorParametros(PARAMS_PAGINACAO), ProdutoController.listarProdutos, paginar)
+    .get("/produtos/busca", gerarVerificadorParametros(PARAMS_PAGINACAO, PARAMS_PRODUTOS), ProdutoController.listarProdutoPorFiltro, paginar)
     .get("/produtos/:id", ProdutoController.listarProdutoPorId)
     .post("/produtos", ProdutoController.cadastrarProduto)
     .put("/produtos/:id", ProdutoController.atualizarProduto)
