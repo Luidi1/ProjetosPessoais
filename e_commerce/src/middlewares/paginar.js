@@ -1,6 +1,12 @@
 import ErroRequisicao from "../erros/ErroRequisicao.js";
 import formatarMensagens from "../utils/formatarMensagens.js";
 
+export const PARAMS_PAGINACAO = [
+    "limite",
+    "pagina",
+    "ordenacao"
+];
+
 async function paginar(req, res, next){
   try {
     let { limite = 5, pagina = 1, ordenacao = "_id:-1" } = req.query;
@@ -25,13 +31,13 @@ async function paginar(req, res, next){
     }
     // Valida "ordenacao"
     if (!campoOrdenacao || isNaN(ordem) || (ordem !== 1 && ordem !== -1)) {
-      erros.push("Parâmetro 'ordenacao' é inválido. Formato esperado: 'campo:1' ou 'campo:-1'");
+      erros.push("O formato do parâmetro 'ordenacao' está inválido. Formato esperado: 'ordenacao=campo:1' ou 'ordenacao=campo:-1'");
     } else {
       // Valida se campoOrdenacao existe no modelo
       const resultado = req.resultado;
       const camposPermitidos = Object.keys(resultado.schema.paths);
       if (!camposPermitidos.includes(campoOrdenacao)) {
-        erros.push(`Campo de ordenação "${campoOrdenacao}" inválido. Campos permitidos: ${camposPermitidos.join(", ")}`);
+        erros.push(`Campo de ordenação ${campoOrdenacao} inválido. Campos permitidos: ${camposPermitidos.join(", ")}`);
       }
     }
 
