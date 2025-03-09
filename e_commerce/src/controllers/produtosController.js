@@ -67,7 +67,9 @@ class ProdutoController{
 
             const produtoResultado = await produto.save();
 
-            res.status(201).json(produtoResultado);
+            res.status(201).json({
+                message: 'Produto criado com sucesso!',
+                data: produtoResultado});
         } catch(erro){
             console.error(erro);
             next(erro);
@@ -82,10 +84,10 @@ class ProdutoController{
 
             if(produtoResultado !== null){
                 res.status(200).json({
-                    message: `Livro com id igual a ${id} atualizado com sucesso`,
+                    message: `Produto com id igual a ${id} atualizado com sucesso`,
                     data: produtoResultado});
             } else{
-                throw new NaoEncontrado(`produto com id igual a ${id} não encontrado`);
+                throw new NaoEncontrado(`Produto com id igual a ${id} não encontrado`);
             }
         } catch(erro){
             next(erro);
@@ -100,11 +102,11 @@ class ProdutoController{
     
             if(produtoResultado !== null){
                 res.status(200).json({
-                    message: `Livro com id igual a ${id} foi deletado com sucesso.`,
+                    message: `Produto com id igual a ${id} foi deletado com sucesso.`,
                     data: produtoResultado
                 });
             } else{
-                throw new NaoEncontrado(`produto com id igual a ${id} não encontrado`);
+                throw new NaoEncontrado(`Produto com id igual a ${id} não encontrado`);
             }
         } catch(erro){
             next(erro);

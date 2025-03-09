@@ -1,3 +1,5 @@
+import ErroBase from "./erroBase.js";
+
 class ErroConversaoDeTipo extends ErroBase{
     constructor(erroCast){
         super("Erro de conversão de tipo", 400);
@@ -10,3 +12,5 @@ class ErroConversaoDeTipo extends ErroBase{
         });
     }
 }
+
+export default ErroConversaoDeTipo;
