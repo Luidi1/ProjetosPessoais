@@ -3,6 +3,19 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 class UsuarioController{
+
+    static listarUsuarios = async(req, res, next) =>{
+        try{
+            const usuarioResultado = Usuario.find();
+
+            req.resultado = usuarioResultado;
+
+            next();
+        } catch(erro){
+            next(erro);
+        }
+    }
+
     static cadastrarUsuario = async(req, res, next) =>{
         try{
             let usuario = new Usuario(req.body);

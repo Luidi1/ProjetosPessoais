@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import { enderecoSchema, anexarUsuarioHooks } from './utils/UsuarioHelpers.js';
 
 export const usuarioSchema = new mongoose.Schema({
-  id: { type: String },
   nome: { type: String },
   data_nascimento: {
     type: Date,
