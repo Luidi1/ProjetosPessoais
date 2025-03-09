@@ -1,7 +1,7 @@
 // usuario.test.js
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import Usuario from '../models/usuario.js'; // Ajuste o caminho conforme seu projeto
+import Usuario from '../Usuario.js'; // Ajuste o caminho conforme seu projeto
 import bcrypt from 'bcrypt';
 
 let mongoServer;
@@ -11,10 +11,12 @@ describe('Testes do Schema de Usuario', () => {
   beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const uri = mongoServer.getUri();
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(uri);
+  });
+
+  // **Cria (ou recria) os índices antes de cada teste**
+  beforeEach(async () => {
+    await Usuario.init();
   });
 
   // Limpa a base de dados após cada teste (para isolar os cenários)
@@ -40,7 +42,6 @@ describe('Testes do Schema de Usuario', () => {
 
     // Verifica se a data_nascimento foi gerada
     expect(savedUsuario.data_nascimento).toBeInstanceOf(Date);
-    // Podemos verificar se está no padrão (exemplo: 2000, 2001, etc.) se desejarmos
   });
 
   it('Não deve sobrescrever nome e data_nascimento se já forem informados', async () => {
@@ -53,9 +54,8 @@ describe('Testes do Schema de Usuario', () => {
     const savedUsuario = await usuario.save();
 
     expect(savedUsuario.nome).toBe('João');
-    expect(savedUsuario.data_nascimento.toISOString()).toBe(
-      new Date('1990-05-20').toISOString()
-    );
+    expect(savedUsuario.data_nascimento.toISOString())
+      .toBe(new Date('1990-05-20').toISOString());
   });
 
   it('Deve rejeitar data de nascimento antes de 1900-01-01', async () => {
@@ -64,8 +64,8 @@ describe('Testes do Schema de Usuario', () => {
       senha: '123456',
       data_nascimento: new Date('1899-12-31'),
     });
-    let erro;
 
+    let erro;
     try {
       await usuario.validate(); // ou usuario.save()
     } catch (err) {
@@ -77,7 +77,6 @@ describe('Testes do Schema de Usuario', () => {
   });
 
   it('Deve rejeitar usuário com menos de 18 anos', async () => {
-    // Exemplo: hoje - 10 anos
     const hoje = new Date();
     const dataMenorIdade = new Date(
       hoje.getFullYear() - 10,
@@ -151,8 +150,10 @@ describe('Testes do Schema de Usuario', () => {
       erro = err;
     }
 
+    // Verifica se o erro foi disparado
     expect(erro).toBeDefined();
-    expect(erro.code).toBe(11000); // código de erro para duplicatas no Mongo
+    // Código de erro 11000 = duplicidade
+    expect(erro.code).toBe(11000);
   });
 
   it('Deve fazer o hash da senha ao salvar', async () => {

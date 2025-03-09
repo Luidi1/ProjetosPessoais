@@ -10,10 +10,7 @@ describe('Testes do Schema de Produto', () => {
   beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const uri = mongoServer.getUri();
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(uri);
   });
 
   // Limpa a base de dados após cada teste, para isolar cenários
