@@ -1,4 +1,5 @@
 import ErroRequisicao from "../erros/ErroRequisicao.js";
+import {concatenarItensComVirgulaAndE} from "../utils/formatarMensagens.js";
 
 /**
  * Gera um middleware que verifica se existem parâmetros
@@ -28,23 +29,13 @@ function gerarVerificadorParametros(...listasDeParametros) {
         ));
       } else if (desconhecidos.length > 1) {
         // Aqui, usamos a função juntarComE
-        const parametrosStr = juntarComE(desconhecidos.map(p => `${p}`));
+        const parametrosStr = concatenarItensComVirgulaAndE(desconhecidos.map(p => `${p}`));
         return next(new ErroRequisicao(
           `Os parâmetros {${parametrosStr}} informados não existem.`
         ));
       }
       next();
     };
-}
-  
-  // Função auxiliar para formatar array com vírgulas e " e " antes do último
-function juntarComE(lista) {
-    if (lista.length === 0) return "";
-    if (lista.length === 1) return lista[0];
-    if (lista.length === 2) return lista.join(" e ");
-    
-    const ultimo = lista.pop();
-    return lista.join(", ") + " e " + ultimo;
 }
   
 export default gerarVerificadorParametros;

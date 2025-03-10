@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import formatarMensagens from "../utils/formatarMensagens.js";
+import {formatarListaDeMensagens} from "../utils/formatarMensagens.js";
 import ErroBase from "./erroBase.js";
 
 class ErroValidacao extends ErroBase{
@@ -40,7 +40,7 @@ class ErroValidacao extends ErroBase{
         }
     
         // 5. Aplica sua formatação de pontuação (ponto-e-vírgula etc.)
-        const mensagemFinal = formatarMensagens(mensagensCampos);
+        const mensagemFinal = formatarListaDeMensagens(mensagensCampos);
     
         return res.status(400).json({ message: mensagemFinal });
     }

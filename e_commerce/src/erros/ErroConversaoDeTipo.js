@@ -8,7 +8,7 @@ class ErroConversaoDeTipo extends ErroBase{
 
     enviarResposta(res) {
         return res.status(this.status).json({
-          message: `O campo "${this.erroCast.path}" recebeu um valor inválido.`
+          message: `O campo {${this.erroCast.path}} recebeu um valor inválido.`
         });
     }
 }

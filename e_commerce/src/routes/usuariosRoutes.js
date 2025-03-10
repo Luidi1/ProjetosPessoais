@@ -6,9 +6,11 @@ import gerarVerificadorParametros from "../middlewares/gerarVerificadorParametro
 const router = express.Router();
 
 router
+    .get("/usuarios/:id", UsuarioController.lsitarUsuarioPorid)
     .get("/usuarios", gerarVerificadorParametros(PARAMS_PAGINACAO), UsuarioController.listarUsuarios, paginacao)
     .post("/usuarios/login", UsuarioController.logarUsuario)
-    .post("/usuarios", UsuarioController.cadastrarUsuario);
+    .post("/usuarios", UsuarioController.cadastrarUsuario)
+    .put("/usuarios/:id", UsuarioController.atualizarUsuario);
     
 
 export default router;

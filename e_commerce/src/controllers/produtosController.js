@@ -1,6 +1,6 @@
 import NaoEncontrado from "../erros/NaoEncontrado.js";
 import produtos from "../models/Produto.js"
-import formatarMensagens from "../utils/formatarMensagens.js";
+import {formatarListaDeMensagens} from "../utils/formatarMensagens.js";
 import * as produtosHelpers from "./utils/produtosHelpers.js";
 
 class ProdutoController{
@@ -29,7 +29,7 @@ class ProdutoController{
           const erros = [erroNome, erroPreco, erroEstoque].filter(msg => msg !== null);
           if (erros.length > 0) {
             // Formata a mensagem unindo com "; " e finalizando com "."
-            const mensagemFinal = formatarMensagens(erros);
+            const mensagemFinal = formatarListaDeMensagens(erros);
             throw new NaoEncontrado(mensagemFinal);
           }
           
@@ -84,10 +84,11 @@ class ProdutoController{
 
             if(produtoResultado !== null){
                 res.status(200).json({
-                    message: `Produto com id igual a ${id} atualizado com sucesso`,
-                    data: produtoResultado});
+                    message: `Produto com id igual a {${id}} atualizado com sucesso.`,
+                    data: produtoResultado
+                });
             } else{
-                throw new NaoEncontrado(`Produto com id igual a ${id} não encontrado`);
+                throw new NaoEncontrado(`Produto com id igual a {${id}} não encontrado.`);
             }
         } catch(erro){
             next(erro);

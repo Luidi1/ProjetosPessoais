@@ -1,5 +1,5 @@
 // Exemplo de função que faz a formatação
-function formatarMensagens(mensagens) {
+export function formatarListaDeMensagens(mensagens) {
     const total = mensagens.length;
   
     const mensagensFormatadas = mensagens.map((msg, index) => {
@@ -20,7 +20,13 @@ function formatarMensagens(mensagens) {
     // Junta todas com espaço
     return mensagensFormatadas.join(' ');
 }
+
+export function concatenarItensComVirgulaAndE(lista) {
+  if (lista.length === 0) return "";
+  if (lista.length === 1) return lista[0];
+  if (lista.length === 2) return lista.join(" e ");
   
-// Exporta para usar em outros arquivos
-export default formatarMensagens;
+  const ultimo = lista.pop();
+  return lista.join(", ") + " e " + ultimo;
+}
   

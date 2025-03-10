@@ -1,5 +1,5 @@
 import ErroRequisicao from "../erros/ErroRequisicao.js";
-import formatarMensagens from "../utils/formatarMensagens.js";
+import {formatarListaDeMensagens} from "../utils/formatarMensagens.js";
 
 export const PARAMS_PAGINACAO = [
     "limite",
@@ -43,8 +43,8 @@ async function paginar(req, res, next){
 
     // Se houver erros, lance o erro de requisição
     if (erros.length > 0) {
-      // Supondo que seu formatarMensagens une com "; " e finaliza com "."
-      const mensagemFinal = formatarMensagens(erros);
+      // Supondo que seu formatarListaDeMensagens une com "; " e finaliza com "."
+      const mensagemFinal = formatarListaDeMensagens(erros);
       return next(new ErroRequisicao(mensagemFinal));
     }
 
