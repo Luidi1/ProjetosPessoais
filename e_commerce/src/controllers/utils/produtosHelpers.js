@@ -12,7 +12,7 @@ export const PARAMS_PRODUTOS = [
 export async function verificarFiltroNome(queryParams) {
     const { nome } = queryParams;
     if (!nome) return null; // Se não houver filtro, não retorna erro
-    const resultado = await produtos.find({ nome: { $regex: nome, $options: "i" } });
+    const resultado = await produtos.find({ nome: { $regex: `^${nome}`, $options: "i" } });
     if (resultado.length === 0) {
       return `Nenhum produto com o NOME igual a {${nome.toUpperCase()}} encontrado.`;
     }
@@ -72,7 +72,7 @@ export async function processaBusca(parametros){
 
     const busca = {};
 
-    if(nome) busca.nome = {$regex: nome, $options: "i"};
+    if(nome) busca.nome = {$regex: `^${nome}`, $options: "i"};
 
     if(minPreco || maxPreco) busca.preco = {};
 
