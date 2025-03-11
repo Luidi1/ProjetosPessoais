@@ -10,7 +10,7 @@ router
     .get("/usuarios", gerarVerificadorParametros(PARAMS_PAGINACAO), UsuarioController.listarUsuarios, paginacao)
     .post("/usuarios/login", UsuarioController.logarUsuario)
     .post("/usuarios", UsuarioController.cadastrarUsuario)
-    .put("/usuarios/:id", UsuarioController.atualizarUsuario);
+    .put("/usuarios/:id", UsuarioController.atualizarUsuario)
+    .delete("/usuarios/:id", UsuarioController.deletarUsuario);
     
-
 export default router;
