@@ -3,8 +3,9 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import NaoEncontrado from "../erros/NaoEncontrado.js";
 import ErroRequisicao from "../erros/ErroRequisicao.js";
-import { concatenarItensComVirgulaAndE } from "../utils/formatarMensagens.js";
+import { concatenarItensComVirgulaAndE, formatarListaDeMensagens } from "../utils/formatarMensagens.js";
 import mongoose from "mongoose";
+import * as usuariosHelpers from "./utils/usuariosHelpers.js";
 
 class UsuarioController{
 
@@ -35,6 +36,32 @@ class UsuarioController{
         } catch(erro){
             next(erro);
         }
+    }
+
+    static listarUsuariosPorFiltro = async(req, res, next) =>{
+      try {
+        // 1. Executa verificações individuais
+        const [erroNome] = await Promise.all([
+          usuariosHelpers.verificarFiltroNome(req.query)
+        ]);
+  
+        // 2. Se qualquer filtro isolado não tiver resultado, retorna o erro
+        const erros = [erroNome].filter(msg => msg !== null);
+        if (erros.length > 0) {
+          // Formata a mensagem unindo com "; " e finalizando com "."
+          const mensagemFinal = formatarListaDeMensagens(erros);
+          throw new NaoEncontrado(mensagemFinal);
+        }
+        
+        // 3. Se todas as verificações passarem, constrói a busca combinada
+        const busca = await usuariosHelpers.processaBusca(req.query);
+        const resultadoUsuarios = Usuario.find(busca);
+        req.resultado = resultadoUsuarios;
+
+        next();
+      } catch (erro) {
+        next(erro);
+      }
     }
 
     static cadastrarUsuario = async(req, res, next) =>{

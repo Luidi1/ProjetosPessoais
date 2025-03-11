@@ -14,7 +14,7 @@ export async function verificarFiltroNome(queryParams) {
     if (!nome) return null; // Se não houver filtro, não retorna erro
     const resultado = await produtos.find({ nome: { $regex: nome, $options: "i" } });
     if (resultado.length === 0) {
-      return `Nenhum produto com o NOME igual a '${nome.toUpperCase()}' encontrado.`;
+      return `Nenhum produto com o NOME igual a {${nome.toUpperCase()}} encontrado.`;
     }
     return null;
 }
@@ -85,5 +85,4 @@ export async function processaBusca(parametros){
     if(maxEstoque) busca.estoque.$lte = maxEstoque;
 
     return busca;
-
 }

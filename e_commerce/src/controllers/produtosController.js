@@ -1,18 +1,18 @@
 import NaoEncontrado from "../erros/NaoEncontrado.js";
-import produtos from "../models/Produto.js"
+import Produto from "../models/Produto.js"
 import {formatarListaDeMensagens} from "../utils/formatarMensagens.js";
 import * as produtosHelpers from "./utils/produtosHelpers.js";
 
 class ProdutoController{
     static listarProdutos = async(req, res, next) =>{
         try{
-            const resultadoProdutos = produtos.find()
+            const resultadoProdutos = Produto.find()
 
             req.resultado = resultadoProdutos;
 
             next();
         } catch(erro){
-            console.error(erro);
+            next(erro);
         }
     }
 
@@ -35,12 +35,11 @@ class ProdutoController{
           
           // 3. Se todas as verificações passarem, constrói a busca combinada
           const busca = await produtosHelpers.processaBusca(req.query);
-          const resultadoProdutos = produtos.find(busca);
+          const resultadoProdutos = Produto.find(busca);
           req.resultado = resultadoProdutos;
 
           next();
         } catch (erro) {
-          console.error(erro);
           next(erro);
         }
     }
@@ -49,7 +48,7 @@ class ProdutoController{
         try{
             const id = req.params.id;
 
-            const produtoResultado = await produtos.findById(id);
+            const produtoResultado = await Produto.findById(id);
 
             if(produtoResultado !== null){
                 res.status(200).json(produtoResultado);
@@ -63,7 +62,7 @@ class ProdutoController{
 
     static cadastrarProduto = async(req, res, next) =>{
         try{
-            let produto = new produtos(req.body);
+            let produto = new Produto(req.body);
 
             const produtoResultado = await produto.save();
 
@@ -80,7 +79,7 @@ class ProdutoController{
         try{
             const id = req.params.id;
 
-            const produtoResultado = await produtos.findByIdAndUpdate(id, {$set: req.body}, {new: true});
+            const produtoResultado = await Produto.findByIdAndUpdate(id, {$set: req.body}, {new: true});
 
             if(produtoResultado !== null){
                 res.status(200).json({
@@ -99,7 +98,7 @@ class ProdutoController{
         try{
             const id = req.params.id;
     
-            const produtoResultado = await produtos.findByIdAndDelete(id);
+            const produtoResultado = await Produto.findByIdAndDelete(id);
     
             if(produtoResultado !== null){
                 res.status(200).json({
