@@ -42,7 +42,8 @@ class UsuarioController{
       try {
         // 1. Executa verificações individuais
         const [erroNome] = await Promise.all([
-          usuariosHelpers.verificarFiltroNome(req.query)
+          usuariosHelpers.verificarFiltroNome(req.query),
+          usuariosHelpers.verificarFiltroData_nascimento(req.query)
         ]);
   
         // 2. Se qualquer filtro isolado não tiver resultado, retorna o erro
