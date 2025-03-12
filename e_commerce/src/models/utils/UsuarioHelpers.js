@@ -55,24 +55,43 @@ export function anexarUsuarioHooks(usuarioSchema) {
       }
     }
     next();
-});
+  });
 
+  // Hook para realizar o hash da senha, se necessário
+  usuarioSchema.pre('save', async function (next) {
+    if (!this.isModified('senha')) {
+      return next();
+    }
 
+    try {
+      const hash = await bcrypt.hash(this.senha, SALT_ROUNDS);
+      this.senha = hash;
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
 
-
+  usuarioSchema.set('toJSON', {
+    transform: function (doc, ret) {
+      // Formata a data para ISO (YYYY-MM-DD) se existir
+      if (ret.data_nascimento) {
+        const isoCompleto = new Date(ret.data_nascimento).toISOString();
+        ret.data_nascimento = isoCompleto.split("T")[0];
+      }
       
-      // Hook para realizar o hash da senha, se necessário
-      usuarioSchema.pre('save', async function (next) {
-        if (!this.isModified('senha')) {
-          return next();
-        }
-      
-        try {
-          const hash = await bcrypt.hash(this.senha, SALT_ROUNDS);
-          this.senha = hash;
-          next();
-        } catch (err) {
-          next(err);
-        }
-    });
+      // Reordena as chaves conforme desejado
+      const { _id, nome, data_nascimento, email, senha, endereco, __v, ...resto } = ret;
+      return {
+        _id,
+        nome,
+        data_nascimento,
+        email,
+        senha,
+        endereco,
+        __v,
+        ...resto
+      };
+    }
+  });  
 }
