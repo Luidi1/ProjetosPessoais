@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 import { enderecoSchema, anexarUsuarioHooks } from './utils/UsuarioHelpers.js';
+import TipoData from "./utils/tipoData.js";
 
 export const usuarioSchema = new mongoose.Schema({
   nome: { type: String },
   data_nascimento: {
-    type: Date,
+    type: TipoData,
     min: [new Date('1900-01-01'), 'A data deve ser a partir de 01/01/1900.'],
     validate: {
       validator: function (value) {

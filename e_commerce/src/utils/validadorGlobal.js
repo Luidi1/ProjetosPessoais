@@ -12,6 +12,7 @@ mongoose.Schema.Types.Number.set("validate", {
     message: ({ path }) => `O campo "${path}" precisa ser um número válido.`
 });
 
+//Inútil, pois a conversão é feita primeiro, e se falhar dispara o erro e nao entrando aqui.
 /*mongoose.Schema.Types.Date.set('validate', {
   validator: function (valor) {
     // Se for objeto Date, verifica se é válido
