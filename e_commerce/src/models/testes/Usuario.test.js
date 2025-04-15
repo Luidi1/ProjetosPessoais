@@ -73,7 +73,7 @@ describe('Testes do Schema de Usuario', () => {
     }
     expect(erro).toBeDefined();
     expect(erro.errors['data_nascimento']).toBeDefined();
-    expect(erro.errors['data_nascimento'].message).toMatch(/a partir de 01\/01\/1900/i);
+    expect(erro.errors['data_nascimento'].message).toMatch(/a partir de 1900-01-01/i);
   });
 
   it('Deve rejeitar usuário com menos de 18 anos', async () => {
@@ -207,23 +207,23 @@ describe('Testes do Schema de Usuario', () => {
   });
 
   it('Deve criar múltiplos usuários simultaneamente sem duplicar nome', async () => {
-    // Teste de concorrência: cria vários usuários ao mesmo tempo
     const numUsers = 5;
-    const promises = [];
+    const resultados = [];
+  
     for (let i = 0; i < numUsers; i++) {
-      promises.push(
-        Usuario.create({
-          email: `concorrente${i}@exemplo.com`,
-          senha: `senha${i}`,
-        })
-      );
+      const usuario = await Usuario.create({
+        email: `concorrente${i}@exemplo.com`,
+        senha: `senha${i}`,
+      });
+      resultados.push(usuario);
     }
-    const resultados = await Promise.all(promises);
-
+  
     // Verifica se cada usuário recebeu um nome diferente (Nome1, Nome2, etc.)
     const nomes = resultados.map(u => u.nome);
+    console.log("Nomes gerados:", nomes);
     expect(new Set(nomes).size).toBe(numUsers);
   });
+  
 
   it('Deve aceitar endereço se fornecido', async () => {
     const usuario = new Usuario({

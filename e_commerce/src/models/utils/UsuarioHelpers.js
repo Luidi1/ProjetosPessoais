@@ -23,7 +23,7 @@ export const enderecoSchema = new mongoose.Schema({
 
 // Hook unificado para gerar nome e data_nascimento se não informados
 export function anexarUsuarioHooks(usuarioSchema) {
-  usuarioSchema.pre('save', async function (next) {
+  usuarioSchema.pre('validate', async function (next) {
     try{
 
       if (!this.nome || !this.data_nascimento) {
