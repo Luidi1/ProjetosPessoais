@@ -6,19 +6,27 @@ export const usuarioSchema = new mongoose.Schema({
   nome: { type: String },
   data_nascimento: {
     type: TipoData,
-    min: [new Date('1900-01-01'), 'A data deve ser a partir de 01/01/1900.'],
-    validate: {
-      validator: function (value) {
-        const today = new Date();
-        const minAgeDate = new Date(
-          today.getFullYear() - 18,
-          today.getMonth(),
-          today.getDate()
-        );
-        return value <= minAgeDate;
+    required: true,
+    validate: [
+      {
+        validator: function (value) {
+          return value >= new Date('1900-01-01');
+        },
+        message: 'A data deve ser a partir de 1900-01-01.'
       },
-      message: 'O usuário deve ter pelo menos 18 anos.'
-    }
+      {
+        validator: function (value) {
+          const today = new Date();
+          const minAgeDate = new Date(
+            today.getFullYear() - 18,
+            today.getMonth(),
+            today.getDate()
+          );
+          return value <= minAgeDate;
+        },
+        message: 'O usuário deve ter pelo menos 18 anos.'
+      }
+    ]
   },
   endereco: enderecoSchema,
   email: {

@@ -7,6 +7,10 @@ class TipoData extends mongoose.SchemaType {
   }
 
   cast(val) {
+    if (val instanceof Date) {
+    return val;
+    }
+    
     // Se não for string, lança CastError custom
     if (typeof val !== "string") {
       // Passa os 3 primeiros parâmetros (tipo, valor, path)

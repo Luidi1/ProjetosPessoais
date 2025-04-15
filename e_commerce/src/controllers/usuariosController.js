@@ -6,6 +6,7 @@ import ErroRequisicao from "../erros/ErroRequisicao.js";
 import { concatenarItensComVirgulaAndE, formatarListaDeMensagens } from "../utils/formatarMensagens.js";
 import mongoose from "mongoose";
 import * as usuariosHelpers from "./utils/usuariosHelpers.js";
+import ErroCampoDuplicado from "../erros/ErroCampoDuplicado.js";
 
 class UsuarioController{
 
@@ -66,18 +67,21 @@ class UsuarioController{
     }
 
     static cadastrarUsuario = async(req, res, next) =>{
-        try{
-            let usuario = new Usuario(req.body);
+      try{
+          let usuario = new Usuario(req.body);
 
-            const usuarioResultado = await usuario.save();
+          const usuarioResultado = await usuario.save();
 
-            res.status(201).json({
-                message: 'Usuário criado com sucesso.',
-                data: usuarioResultado
-            });
-        } catch(erro){
-            next(erro);
-        }
+          res.status(201).json({
+              message: 'Usuário criado com sucesso.',
+              data: usuarioResultado
+          });
+      } catch(erro){
+          if (erro.code === 11000) {
+            return next(new ErroCampoDuplicado(erro));
+          }
+          next(erro);
+      }
     }
 
     static atualizarUsuario = async (req, res, next) => {
