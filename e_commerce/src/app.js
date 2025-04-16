@@ -5,7 +5,7 @@ import manipuladorDeErros from "./middlewares/manipuladorDeErros.js";
 import manipulador404 from "./middlewares/manipulador404.js";
 import usuario from "./routes/usuariosRoutes.js";
 
-await dbConnect();
+dbConnect();
 const app = express();
 app.use(express.json());
 

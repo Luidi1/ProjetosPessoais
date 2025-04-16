@@ -4,7 +4,6 @@ import ErroBase from "../erros/erroBase.js";
 import ErroConversaoDeTipo from "../erros/ErroConversaoDeTipo.js"
 
 function manipuladorDeErros(erro, req, res, next) {
-  console.error(erro);
   if (erro instanceof mongoose.Error.ValidationError){
     return new ErroValidacao(erro).enviarResposta(res);
   }
