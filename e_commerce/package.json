@@ -18,7 +18,8 @@
     "test": "jest --config jest.config.cjs",
     "test:produto": "jest src/models/testes/Produto.test.js --config jest.config.cjs",
     "test:usuario": "jest src/models/testes/Usuario.test.js --config jest.config.cjs",
-    "test:usuarioController": "jest src/controllers/testes/UsuarioController.test.js --config jest.config.cjs"
+    "test:usuarioController": "jest src/controllers/testes/UsuarioController.test.js --config jest.config.cjs",
+    "test:produtoController": "jest src/controllers/testes/ProdutoController.test.js --config jest.config.cjs"
   },
   "keywords": [],
   "author": "",
