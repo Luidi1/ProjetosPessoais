@@ -12,6 +12,6 @@ router
     .get("/produtos/:id", ProdutoController.listarProdutoPorId)
     .post("/produtos", ProdutoController.cadastrarProduto)
     .put("/produtos/:id", ProdutoController.atualizarProduto)
-    .delete("/produtos/:id", ProdutoController.deletarProduto);
-
+    .delete("/produtos/:id", ProdutoController.deletarProduto)
+    .delete("/produtos", ProdutoController.deletarTodosProdutos);
 export default router;

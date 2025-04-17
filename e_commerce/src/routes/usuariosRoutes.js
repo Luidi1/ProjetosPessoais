@@ -13,6 +13,7 @@ router
     .post("/usuarios/login", UsuarioController.logarUsuario)
     .post("/usuarios", UsuarioController.cadastrarUsuario)
     .put("/usuarios/:id", UsuarioController.atualizarUsuario)
-    .delete("/usuarios/:id", UsuarioController.deletarUsuario);
+    .delete("/usuarios/:id", UsuarioController.deletarUsuario)
+    .delete("/usuarios", UsuarioController.deletarTodosUsuarios);
     
 export default router;

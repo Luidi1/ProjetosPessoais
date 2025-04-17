@@ -112,6 +112,21 @@ class ProdutoController{
             next(erro);
         }
     }   
+
+    static deletarTodosProdutos = async(req, res, next) =>{
+        try{
+            const resultado = await Produto.deleteMany({});
+
+            res.status(200).json({
+                message: 'Todos os produtos foram deletados com sucesso.',
+                data: {
+                    totalProdutosDeletados: resultado.deletedCount
+                }
+            })
+        } catch(erro){
+            next(erro);
+        }
+    }
 }
 
 export default ProdutoController;

@@ -160,6 +160,23 @@ class UsuarioController{
     }
   }
 
+  static deletarTodosUsuarios = async (req, res, next) => {
+    try {
+      // Remove todos os documentos da coleção de usuários
+      const resultado = await Usuario.deleteMany({});
+  
+      // Envia status 200 e informa quantos foram deletados
+      res.status(200).json({
+        message: 'Todos os usuários foram deletados com sucesso.',
+        data: {
+          totalUsuariosDeletados: resultado.deletedCount
+        }
+      });
+    } catch (erro) {
+      next(erro);
+    }
+  }
+
   // Função para login
   static logarUsuario = async (req, res, next) => {
     try {
