@@ -23,6 +23,6 @@ const produtoSchema = new mongoose.Schema({
     dataAtualizacao: {type: Date, default: Date.now}
 });
 
-const produtos = mongoose.model("produtos", produtoSchema);
+const Produto = mongoose.model("Produto", produtoSchema);
 
-export default produtos;
+export default Produto;
