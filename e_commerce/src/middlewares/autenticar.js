@@ -21,8 +21,12 @@ export default function autenticar(req, res, next) {
   const token = parts[1];
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    // coloca o ID do usuário no request
-    req.user = { id: payload.id, email: payload.email };
+    // coloca o ID, email e perfil do usuário no request
+    req.user = {
+      id:     payload.id,
+      email:  payload.email,
+      perfil: payload.perfil
+    };
     next();
   } catch (err) {
     return res

@@ -8,6 +8,7 @@ import manipulador404 from "./middlewares/manipulador404.js";
 import usuario from "./routes/usuariosRoutes.js";
 import carrinho from "./routes/carrinhoRoutes.js";
 import reordenaJson from './middlewares/reordenaJson.js';
+import pedido from './routes/pedidoRoutes.js'
 
 dbConnect();
 const app = express();
@@ -17,6 +18,8 @@ app.use(reordenaJson);
 app.use(produtos);
 app.use(usuario);
 app.use(carrinho);
+app.use(pedido);
+
 app.use(manipulador404);
 app.use(manipuladorDeErros);
 

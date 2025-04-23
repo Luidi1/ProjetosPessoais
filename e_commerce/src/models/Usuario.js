@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 import { enderecoSchema, anexarUsuarioHooks } from './utils/UsuarioHelpers.js';
 import TipoData from "./utils/tipoData.js";
+import { concatenarItensComVirgulaAndE } from '../utils/formatarMensagens.js';
+
+const PERFIS = ['CLIENTE', 'ADMINISTRADOR'];
 
 export const usuarioSchema = new mongoose.Schema({
   nome: { type: String },
@@ -43,7 +46,22 @@ export const usuarioSchema = new mongoose.Schema({
   senha: {
     type: String,
     required: [true, 'Senha é obrigatório'],
+  },
+  perfil: {
+    type: String,
+    uppercase: true,
+    enum: {
+      values: PERFIS,
+      // use a função para montar a string corretamente
+      message: props =>
+        `Perfil inválido. Os valores permitidos são: ${
+          concatenarItensComVirgulaAndE(PERFIS)
+        }.`
+    },
+    default: PERFIS[0]
   }
+}, {
+  id: false
 });
 
 anexarUsuarioHooks(usuarioSchema);

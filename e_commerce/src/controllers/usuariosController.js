@@ -84,53 +84,56 @@ class UsuarioController{
       }
     }
 
-    static atualizarUsuario = async (req, res, next) => {
-      try {
-        const id = req.params.id;
-  
-        // 1. Verifica se o ID é válido (ObjectId)
-        if (!mongoose.isValidObjectId(id)) {
-          throw new ErroRequisicao(`O ID {${id}} não é um ObjectId válido.`);
-        }
-  
-        // 2. Verifica se o documento existe
-        const usuarioExistente = await Usuario.findById(id);
-        if (!usuarioExistente) {
-          throw new NaoEncontrado(`Usuário com id igual a {${id}} não encontrado.`);
-        }
-  
-        // 3. Agora, checa se há campos inválidos
-        const camposValidos = Object.keys(Usuario.schema.obj);
-        const camposEnviados = Object.keys(req.body);
-        const camposInvalidos = camposEnviados.filter(
-          (campo) => !camposValidos.includes(campo)
-        );
-  
-        if (camposInvalidos.length > 0) {
-          const camposInvalidosStr = concatenarItensComVirgulaAndE(camposInvalidos);
-          if (camposInvalidos.length === 1) {
-            throw new ErroRequisicao(`Campo inválido: {${camposInvalidosStr}}`);
-          } else {
-            throw new ErroRequisicao(`Campos inválidos: {${camposInvalidosStr}}`);
-          }
-        }
-  
-        // 4. Se chegou aqui, o ID é válido, o documento existe e os campos são válidos
-        const usuarioResultado = await Usuario.findByIdAndUpdate(
-          id,
-          { $set: req.body },
-          { new: true }
-        );
-  
-        res.status(200).json({
-          message: `Usuário com id igual a {${id}} atualizado com sucesso.`,
-          data: usuarioResultado,
-        });
-  
-      } catch (erro) {
-        next(erro);
+    
+
+  static atualizarUsuario = async (req, res, next) => {
+    try {
+      const id = req.params.id;
+
+      // 1. Verifica se o ID é válido (ObjectId)
+      if (!mongoose.isValidObjectId(id)) {
+        throw new ErroRequisicao(`O ID {${id}} não é um ObjectId válido.`);
       }
+
+      // 2. Verifica se o documento existe
+      const usuarioExistente = await Usuario.findById(id);
+      if (!usuarioExistente) {
+        throw new NaoEncontrado(`Usuário com id igual a {${id}} não encontrado.`);
+      }
+
+      // 3. Checa se há campos inválidos
+      const camposValidos   = Object.keys(Usuario.schema.obj);
+      const camposEnviados = Object.keys(req.body);
+      const camposInvalidos = camposEnviados.filter(c => !camposValidos.includes(c));
+
+      if (camposInvalidos.length > 0) {
+        const camposInvalidosStr = concatenarItensComVirgulaAndE(camposInvalidos);
+        const msg = camposInvalidos.length === 1
+          ? `Campo inválido: {${camposInvalidosStr}}`
+          : `Campos inválidos: {${camposInvalidosStr}}`;
+        throw new ErroRequisicao(msg);
+      }
+
+      // 4. Atualiza o usuário executando os validadores do schema (incluindo enum)
+      const usuarioResultado = await Usuario.findByIdAndUpdate(
+        id,
+        { $set: req.body },
+        {
+          new: true,           // retorna o documento atualizado
+          runValidators: true, // roda validações do schema
+          context: 'query'     // garante validação em operações de update
+        }
+      );
+
+      res.status(200).json({
+        message: `Usuário com id igual a {${id}} atualizado com sucesso.`,
+        data: usuarioResultado
+      });
+    } catch (erro) {
+      next(erro);
     }
+  };
+
 
   static deletarUsuario = async(req, res, next) =>{
     try {
@@ -197,9 +200,9 @@ class UsuarioController{
       // Se o login for bem-sucedido, gera um token JWT
       // Certifique-se de definir uma chave secreta (JWT_SECRET) em suas variáveis de ambiente
       const token = jwt.sign(
-        { id: usuario._id, email: usuario.email },
+        { id: usuario._id, email: usuario.email, perfil: usuario.perfil },
         process.env.JWT_SECRET,
-        { expiresIn: "10h" }
+        /*{ expiresIn: "10h" }*/
       );
 
       res.status(200).json({

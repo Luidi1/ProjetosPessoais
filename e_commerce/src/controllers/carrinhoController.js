@@ -1,4 +1,7 @@
 import Carrinho from '../models/Carrinho.js';
+import Produto        from '../models/Produto.js';
+import ErroRequisicao from '../erros/ErroRequisicao.js';
+import NaoEncontrado  from '../erros/NaoEncontrado.js';
 
 class CarrinhoController {
   // GET /carrinho
@@ -25,8 +28,22 @@ class CarrinhoController {
         carrinho = new Carrinho({ usuario: usuarioId, itens: [] });
       }
   
-      // 2) Encontra ou adiciona o item
-      let subdoc = carrinho.itens.find(i => i.produto.toString() === produto);
+      // 2) Verifica estoque antes de adicionar
+      const produtoDoc = await Produto.findById(produto);
+      if (!produtoDoc) {
+        throw new NaoEncontrado(`Produto com id ${produto} não encontrado.`);
+      }
+      // quantidade já existente no carrinho (se houver)
+      const subdocExistente = carrinho.itens.find(i => i.produto.toString() === produto);
+      const quantidadeAtual = subdocExistente ? subdocExistente.quantidade : 0;
+      if (produtoDoc.estoque < quantidadeAtual + quantidade) {
+        throw new ErroRequisicao(
+          `Estoque insuficiente. Disponível: ${produtoDoc.estoque}, solicitado: ${quantidadeAtual + quantidade}.`
+        );
+      }
+  
+      // 3) Encontra ou adiciona o item
+      let subdoc = subdocExistente;
       if (subdoc) {
         subdoc.quantidade += quantidade;
       } else {
@@ -34,25 +51,26 @@ class CarrinhoController {
         carrinho.itens.push(subdoc);
       }
   
-      // 3) Salva e repopula
+      // 4) Salva e repopula
       carrinho.atualizadoEm = Date.now();
       await carrinho.save();
       await carrinho.populate('itens.produto');
   
-      // 4) Extrai o subdocumento recém‑afetado
+      // 5) Extrai o subdocumento recém-afetado
       const itemAfetado = carrinho.itens.find(i =>
         i.produto._id.toString() === produto
       );
   
-      // 5) Responde apenas com ele
+      // 6) Responde apenas com ele
       res.status(200).json({
         message: 'Item adicionado ao carrinho com sucesso.',
         item: itemAfetado
       });
     } catch (erro) {
       next(erro);
-    }
+      }
   };
+  
   
   // PUT /carrinho/item/:itemId
   static atualizarItem = async (req, res, next) => {

@@ -1,8 +1,6 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
-import app from '../../app.js';          // ajuste o caminho, se necessário
-import Carrinho from '../../models/Carrinho.js';
-import Produto from '../../models/Produto.js';
+import app from '../../app.js';
 
 describe('CarrinhoController', () => {
   let token;
@@ -12,7 +10,7 @@ describe('CarrinhoController', () => {
     // limpa o banco totalmente
     await mongoose.connection.dropDatabase();
 
-    // cria um usuário e faz login para obter o token
+    // cria usuário e faz login para obter o token
     await request(app)
       .post('/usuarios')
       .send({
@@ -35,7 +33,6 @@ describe('CarrinhoController', () => {
       .post('/produtos')
       .set('Authorization', `Bearer ${token}`)
       .send({ nome: 'Produto Test', preco: 100, estoque: 10 });
-    // no seu controller de produtos você devolve em data: { … }
     produtoId = prodRes.body.data._id;
   });
 
@@ -43,97 +40,105 @@ describe('CarrinhoController', () => {
     await mongoose.connection.close();
   });
 
-  it('GET /carrinho deve retornar carrinho vazio inicialmente', async () => {
-    const res = await request(app)
-      .get('/carrinho')
-      .set('Authorization', `Bearer ${token}`);
-    expect(res.statusCode).toBe(200);
-    expect(res.body.itens).toEqual([]);
-    expect(res.body.precoTotal).toBeUndefined();
+  describe('sem itens no carrinho', () => {
+    beforeEach(async () => {
+      await request(app)
+        .delete('/carrinho')
+        .set('Authorization', `Bearer ${token}`);
+    });
+
+    it('GET /carrinho deve retornar carrinho vazio inicialmente', async () => {
+      const res = await request(app)
+        .get('/carrinho')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.itens).toEqual([]);
+      expect(res.body.precoTotal).toBeUndefined();
+    });
+
+    it('POST /carrinho não deve permitir quantidade acima do estoque', async () => {
+      const res = await request(app)
+        .post('/carrinho')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ produto: produtoId, quantidade: 11 });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toHaveProperty(
+        'mensagem',
+        'Estoque insuficiente. Disponível: 10, solicitado: 11.'
+      );
+    });
   });
 
-  it('POST /carrinho deve adicionar item e retornar apenas ele com precoItem', async () => {
-    const res = await request(app)
-      .post('/carrinho')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ produto: produtoId, quantidade: 2 });
+  describe('com item no carrinho', () => {
+    let itemId;
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('message', 
-      'Item adicionado ao carrinho com sucesso.');
-    expect(res.body).toHaveProperty('item');
-    const item = res.body.item;
-    expect(item).toHaveProperty('_id');
-    expect(item).toHaveProperty('produto');
-    expect(item.produto).toHaveProperty('_id', produtoId);
-    expect(item).toHaveProperty('quantidade', 2);
-    expect(item).toHaveProperty('precoItem', 200);
-  });
+    beforeEach(async () => {
+      // limpa e adiciona um item de quantidade 2
+      await request(app)
+        .delete('/carrinho')
+        .set('Authorization', `Bearer ${token}`);
 
-  it('GET /carrinho deve listar o carrinho com precoTotal correto', async () => {
-    const res = await request(app)
-      .get('/carrinho')
-      .set('Authorization', `Bearer ${token}`);
+      const res = await request(app)
+        .post('/carrinho')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ produto: produtoId, quantidade: 2 });
+      itemId = res.body.item._id;
+    });
 
-    expect(res.statusCode).toBe(200);
-    expect(Array.isArray(res.body.itens)).toBe(true);
-    expect(res.body.itens).toHaveLength(1);
-    // 2 unidades de R$100 = R$200
-    expect(res.body.precoTotal).toBe(200);
-  });
+    it('POST /carrinho deve adicionar item e retornar apenas ele com precoItem', async () => {
+      const res = await request(app)
+        .post('/carrinho')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ produto: produtoId, quantidade: 2 });
 
-  it('PUT /carrinho/:itemId deve atualizar apenas a quantidade', async () => {
-    // pega o itemId do carrinho atual
-    const cart = await request(app)
-      .get('/carrinho')
-      .set('Authorization', `Bearer ${token}`);
-    const itemId = cart.body.itens[0]._id;
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toHaveProperty(
+        'message', 'Item adicionado ao carrinho com sucesso.'
+      );
+      const item = res.body.item;
+      expect(item).toHaveProperty('quantidade', 4);
+      expect(item).toHaveProperty('precoItem', '400,00');
+    });
 
-    const res = await request(app)
-      .put(`/carrinho/${itemId}`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({ quantidade: 5 });
+    it('GET /carrinho deve listar o carrinho com precoTotal correto', async () => {
+      const res = await request(app)
+        .get('/carrinho')
+        .set('Authorization', `Bearer ${token}`);
 
-    expect(res.statusCode).toBe(200);
-    const updatedItem = res.body.itens.find(i => i._id === itemId);
-    expect(updatedItem.quantidade).toBe(5);
-  });
+      expect(res.statusCode).toBe(200);
+      expect(res.body.itens).toHaveLength(1);
+      expect(res.body.precoTotal).toBe('200,00');
+    });
 
-  it('DELETE /carrinho/:itemId deve remover o item', async () => {
-    // adiciona outro para testar remoção
-    await request(app)
-      .post('/carrinho')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ produto: produtoId, quantidade: 1 });
+    it('PUT /carrinho/:itemId deve atualizar apenas a quantidade', async () => {
+      const res = await request(app)
+        .put(`/carrinho/${itemId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantidade: 5 });
 
-    // agora são 2 itens (mesmo produto aparece acumulado)
-    const cartBefore = await request(app)
-      .get('/carrinho')
-      .set('Authorization', `Bearer ${token}`);
-    const itemId = cartBefore.body.itens[0]._id;
+      expect(res.statusCode).toBe(200);
+      const updatedItem = res.body.itens.find(i => i._id === itemId);
+      expect(updatedItem.quantidade).toBe(5);
+    });
 
-    const res = await request(app)
-      .delete(`/carrinho/${itemId}`)
-      .set('Authorization', `Bearer ${token}`);
+    it('DELETE /carrinho/:itemId deve remover o item', async () => {
+      const res = await request(app)
+        .delete(`/carrinho/${itemId}`)
+        .set('Authorization', `Bearer ${token}`);
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body.itens.find(i => i._id === itemId)).toBeUndefined();
-  });
+      expect(res.statusCode).toBe(200);
+      expect(res.body.itens.find(i => i._id === itemId)).toBeUndefined();
+    });
 
-  it('DELETE /carrinho deve esvaziar o carrinho', async () => {
-    // garante que há pelo menos um item
-    await request(app)
-      .post('/carrinho')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ produto: produtoId, quantidade: 3 });
+    it('DELETE /carrinho deve esvaziar o carrinho', async () => {
+      const res = await request(app)
+        .delete('/carrinho')
+        .set('Authorization', `Bearer ${token}`);
 
-    const res = await request(app)
-      .delete('/carrinho')
-      .set('Authorization', `Bearer ${token}`);
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('message', 'Carrinho esvaziado.');
-    // data retorna o documento resultante
-    expect(res.body.data.itens).toEqual([]);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toHaveProperty('message', 'Carrinho esvaziado.');
+      expect(res.body.data.itens).toEqual([]);
+    });
   });
 });
