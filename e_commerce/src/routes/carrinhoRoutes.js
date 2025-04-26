@@ -5,7 +5,7 @@ import autenticar from '../middlewares/autenticar.js';
 const router = express.Router();
 
 router
-  // força autenticação para todas as rotas de carrinho
+  // força autenticação para todas as rotas de carrinho. Somente o dono do carrinho pode mexer nele(nem o admin pode)
   .use(autenticar)
 
   // GET  /carrinho               → lista o carrinho do usuário

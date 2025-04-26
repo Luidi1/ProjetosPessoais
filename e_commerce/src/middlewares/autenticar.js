@@ -1,8 +1,8 @@
 // src/middlewares/autenticar.js
 import jwt from 'jsonwebtoken';
-import ErroRequisicao from '../erros/ErroRequisicao.js';
+import pularNoTeste from "../utils/pularNoTeste.js";
 
-export default function autenticar(req, res, next) {
+export function autenticar(req, res, next) {
   const authHeader = req.headers['authorization'] || req.headers['Authorization'];
   if (!authHeader) {
     return res
@@ -34,3 +34,5 @@ export default function autenticar(req, res, next) {
       .json({ message: 'Token inválido ou expirado.' });
   }
 }
+
+export default pularNoTeste(autenticar);

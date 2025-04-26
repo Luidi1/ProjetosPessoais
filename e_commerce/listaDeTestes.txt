@@ -1,0 +1,20 @@
+Testes:
+
+Usuários:
+
+Rota: GET{{URLBase}}/usuarios (listarUsuarios):
+
+-Listar os usuários (feito)
+-Validar email (feito)
+-Mandar uma mensagem para o email, para verificar que existe o email.(a fazer)
+-Validar senha (a fazer)
+-Quando coloca alguma coisa depois da rota como: "/aaa", aparece "Recurso não encontrado". Não seria melhor colocar "Rota não encontrada"?(talvez a fazer)
+
+GET{{URLBase}}/usuarios/id (listarUsuariosPorId):
+
+-Listar qualquer usuário pelo administrador (feito)
+-Listar o usuário pelo dono do mesmo (feito)
+-Não listar usuário por meio de um usuário que não seja administrador (feito)
+-Passando um id no formato errado, o erro é da classe ErroRequisicao (feito)
+-Passando um id inexistente, no formato correto, o erro é da classe NaoEncontrado (feito)
+

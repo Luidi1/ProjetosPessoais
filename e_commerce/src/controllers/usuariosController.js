@@ -22,7 +22,7 @@ class UsuarioController{
         }
     }
 
-    static lsitarUsuarioPorid = async(req, res, next) =>{
+    static listarUsuarioPorId = async(req, res, next) =>{
 
         try{
             const id = req.params.id;

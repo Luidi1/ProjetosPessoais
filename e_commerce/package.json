@@ -6,7 +6,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.13.1",
     "mongoose": "^8.12.1",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "validator": "^13.15.0"
   },
   "name": "e_commerce",
   "version": "1.0.0",
@@ -21,7 +22,8 @@
     "test:usuarioController": "jest src/controllers/testes/UsuarioController.test.js --config jest.config.cjs",
     "test:produtoController": "jest src/controllers/testes/ProdutoController.test.js --config jest.config.cjs",
     "test:carrinhoController": "jest src/controllers/testes/CarrinhoController.test.js --config jest.config.cjs",
-    "test:pedidoController": "jest src/controllers/testes/PedidoController.test.js --config jest.config.cjs"
+    "test:pedidoController": "jest src/controllers/testes/PedidoController.test.js --config jest.config.cjs",
+    "test:emailValidacao": "jest src/utils/validacoes/testesValidacoes/emailValidacao.test.js --config jest.config.cjs"
   },
   "keywords": [],
   "author": "",

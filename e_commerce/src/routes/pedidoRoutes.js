@@ -3,7 +3,7 @@ import { Router } from 'express';
 import PedidoController from '../controllers/PedidoController.js';
 import autenticar from '../middlewares/autenticar.js';
 import verificarDonoOuAdmin from '../middlewares/verificarDonoOuAdmin.js';
-import verificarAdmin from '../middlewares/verificarAdmin.js'
+import verificarAdmin from '../middlewares/verificarAdmin.js';
 
 const router = Router();
 

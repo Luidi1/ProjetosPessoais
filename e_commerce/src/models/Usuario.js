@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { enderecoSchema, anexarUsuarioHooks } from './utils/UsuarioHelpers.js';
 import TipoData from "./utils/tipoData.js";
 import { concatenarItensComVirgulaAndE } from '../utils/formatarMensagens.js';
+import { EhEmailValido } from "../utils/validacoes/emailValidacao.js";
 
 const PERFIS = ['CLIENTE', 'ADMINISTRADOR'];
 
@@ -38,9 +39,11 @@ export const usuarioSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
     trim: true,
-    match: [
-      /^\S+@\S+\.\S+$/,
-      'Por favor, insira um e-mail válido'
+    validate: [
+      {
+        validator: EhEmailValido,
+        message: 'Por favor, insira um e-mail válido'
+      }
     ]
   },
   senha: {
