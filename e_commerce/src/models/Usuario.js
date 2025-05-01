@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import { enderecoSchema, anexarUsuarioHooks } from './utils/UsuarioHelpers.js';
-import TipoData from "./utils/tipoData.js";
 import { concatenarItensComVirgulaAndE } from '../utils/formatarMensagens.js';
 import { EhEmailValido } from "../utils/validacoes/emailValidacao.js";
 
@@ -9,7 +8,7 @@ const PERFIS = ['CLIENTE', 'ADMINISTRADOR'];
 export const usuarioSchema = new mongoose.Schema({
   nome: { type: String },
   data_nascimento: {
-    type: TipoData,
+    type: Date,
     required: true,
     validate: [
       {

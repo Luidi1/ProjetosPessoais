@@ -72,7 +72,7 @@ function getFieldsInSchemaOrder(schema) {
  * Mantém a mesma lógica que você já usa no map(subErro => {...}).
  */
 function formatarSubErro(campo, subErro) {
-    if (subErro.name === 'CastError' && subErro.kind !=='TipoData') {
+    if (subErro.name === 'CastError') {
         return `O campo ${campo} recebeu o tipo ${typeof subErro.value} (valor: ${subErro.value}), mas espera receber ${subErro.kind}.`;
     } else if (subErro.kind === 'required') {
         return subErro.message; // "O nome do produto é obrigatório."

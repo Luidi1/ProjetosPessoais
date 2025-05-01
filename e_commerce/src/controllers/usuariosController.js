@@ -39,27 +39,27 @@ class UsuarioController{
         }
     }
 
-    static listarUsuariosPorFiltro = async(req, res, next) =>{
+    static listarUsuariosPorFiltro = async (req, res, next) => {
       try {
-        // 1. Executa verificações individuais
-        const [erroNome] = await Promise.all([
+        // 1. Executa verificações individuais (agora incluindo perfil e email)
+        const [erroNome, erroDataNascimento, erroPerfil, erroEmail] = await Promise.all([
           usuariosHelpers.verificarFiltroNome(req.query),
-          usuariosHelpers.verificarFiltroData_nascimento(req.query)
+          usuariosHelpers.verificarFiltroData_nascimento(req.query),
+          usuariosHelpers.verificarFiltroPerfil(req.query),
+          usuariosHelpers.verificarFiltroEmail(req.query)
         ]);
   
         // 2. Se qualquer filtro isolado não tiver resultado, retorna o erro
-        const erros = [erroNome].filter(msg => msg !== null);
+        const erros = [erroNome, erroDataNascimento, erroPerfil, erroEmail].filter(msg => msg !== null);
         if (erros.length > 0) {
-          // Formata a mensagem unindo com "; " e finalizando com "."
           const mensagemFinal = formatarListaDeMensagens(erros);
           throw new NaoEncontrado(mensagemFinal);
         }
-        
+  
         // 3. Se todas as verificações passarem, constrói a busca combinada
         const busca = await usuariosHelpers.processaBusca(req.query);
-        const resultadoUsuarios = Usuario.find(busca);
-        req.resultado = resultadoUsuarios;
-
+        req.resultado = Usuario.find(busca);
+  
         next();
       } catch (erro) {
         next(erro);
