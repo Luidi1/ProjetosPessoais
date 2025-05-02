@@ -2,6 +2,22 @@ Testes:
 
 Usuários:
 
+Rota: POST{{URLBase}}/usuarios/
+
+-Cadastrar um úsuario com sucesso, passando todos os campos de usuário.
+-Deve aparecer mensagem de erro se não informar o campo "nome".
+-Deve aparecer mensagem de erro se não informar o campo "data_nascimento".
+-Deve aparecer mensagem de erro se não informar o campo "endereco".
+-Deve aparecer mensagem de erro se não informar o campo "email".
+-Deve aparecer mensagem de erro se não informar o campo "senha".
+-Deve aparecer mensagem de erro se não informar os campos "nome" e "data_nascimento".
+-Deve aparecer mensagem de erro se não informar os campos "nome" e "endereco".
+-Deve aparecer mensagem de erro se não informar os campos "nome" e "email".
+-Deve aparecer mensagem de erro se não informar os campos "nome" e "senha".
+-Deve aparecer mensagem de erro se não informar os campos "nome", "data_nascimento", "endereco", "email" e "senha".
+
+
+
 Rota: GET{{URLBase}}/usuarios (listarUsuarios):
 
 -Listar os usuários (feito)

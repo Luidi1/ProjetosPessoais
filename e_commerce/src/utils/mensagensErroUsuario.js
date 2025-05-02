@@ -55,3 +55,14 @@ export const erroFormatoIdInvalido = (id) =>
 // Usuário por ID não encontrado
 export const erroUsuarioIdNaoEncontrado = (id) =>
 `Usuário com id igual a {${id}} não encontrado.`;
+
+// Falta de campo obrigatório (único)
+export const erroCampoObrigatorio = (campo) =>
+    `O campo ${campo} é obrigatório`;
+  
+// Falta de múltiplos campos obrigatórios
+export const erroCamposObrigatorios = (campos) => {
+// campos é um array de nomes, ex: ['Nome','Endereço']
+const lista = campos.join(', ');
+return `Os campos ${lista} são obrigatórios`;
+};

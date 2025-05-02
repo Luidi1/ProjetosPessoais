@@ -16,7 +16,9 @@ import {
   erroPerfilInexistente,
   erroEmailNaoEncontrado,
   erroFormatoIdInvalido,
-  erroUsuarioIdNaoEncontrado
+  erroUsuarioIdNaoEncontrado,
+  erroCampoObrigatorio,
+  erroCamposObrigatorios 
 
 } from '../../utils/mensagensErroUsuario.js';
 
@@ -360,3 +362,130 @@ describe('Rota: GET /usuarios/busca (listarUsuariosPorBusca)', () => {
       .toBe(erroParamDuplicado('nome'));
   });
 });
+
+describe('Rota: POST /usuarios — criação e validação de campos obrigatórios', () => {
+  let prodApp;
+  let adminToken;
+
+  beforeAll(async () => {
+    // 1) Simula ambiente de PRODUÇÃO mas força usar o banco de TESTE
+    process.env.NODE_ENV = 'production';
+    require('dotenv').config({ path: '.env.test' });
+    process.env.STRING_CONEXAO_DB = process.env.MONGO_URI_TEST;
+
+    // 2) Recarrega módulos e importa o app já em 'produção'
+    jest.resetModules();
+    prodApp = require('../../app.js').default;
+
+    // 3) Limpa usuários e cria um admin para autenticação
+    const Usuario = require('../../models/Usuario.js').default;
+    await Usuario.deleteMany({});
+
+    const fixtureEndereco = {
+      rua: 'Rua Teste',
+      numero: 1,
+      complemento: 'Sem complemento',
+      bairro: 'Centro',
+      cidade: 'Cidade X',
+      estado: 'SP',
+      cep: '00000-000',
+      pais: 'Brasil'
+    };
+
+    const admin = await Usuario.create({
+      nome: 'AdminTeste',
+      data_nascimento: '1990-01-01',
+      email: 'admin@teste.com',
+      senha: 'Senha123!',
+      perfil: 'ADMINISTRADOR',
+      endereco: fixtureEndereco
+    });
+
+    // 4) Gera token JWT de admin
+    const JWT_SECRET = process.env.JWT_SECRET || 'testsecret';
+    adminToken = jwt.sign(
+      { id: admin._id.toString(), perfil: admin.perfil },
+      JWT_SECRET
+    );
+  });
+
+  const basePayload = {
+    nome: 'Teste Usuário',
+    data_nascimento: '1995-01-01',
+    endereco: {
+      rua: 'Rua A',
+      numero: 1,
+      complemento: 'Sem complemento',
+      bairro: 'Bairro X',
+      cidade: 'Cidade Y',
+      estado: 'SP',
+      cep: '00000-000',
+      pais: 'Brasil'
+    },
+    email: 'teste@exemplo.com',
+    senha: 'Senha123!'
+  };
+
+  test('Cadastrar um usuário com sucesso, passando todos os campos de usuário', async () => {
+    const res = await request(prodApp)
+      .post('/usuarios')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(basePayload)
+      .expect(201);
+
+    expect(res.body.data).toHaveProperty('_id');
+    expect(res.body.data.nome).toBe(basePayload.nome);
+    expect(res.body.data.email).toBe(basePayload.email);
+  });
+
+  const casosErro = [
+    ['nome',            { ...basePayload, nome: undefined }],
+    ['data_nascimento', { ...basePayload, data_nascimento: undefined }],
+    ['endereco',        { ...basePayload, endereco: undefined }],
+    ['email',           { ...basePayload, email: undefined }],
+    ['senha',           { ...basePayload, senha: undefined }],
+    ['nome e data_nascimento', { ...basePayload, nome: undefined, data_nascimento: undefined }],
+    ['nome e endereco',        { ...basePayload, nome: undefined, endereco: undefined }],
+    ['nome e email',           { ...basePayload, nome: undefined, email: undefined }],
+    ['nome e senha',           { ...basePayload, nome: undefined, senha: undefined }],
+    ['todos os campos obrigatórios', {}]
+  ];
+
+  // mapeia o identificador do campo no payload para o rótulo usado nas mensagens
+  const fieldLabels = {
+    nome: 'Nome',
+    data_nascimento: 'Data de Nascimento',
+    endereco: 'Endereço',
+    email: 'Email',
+    senha: 'Senha'
+  };
+
+  test.each(casosErro)(
+    'Deve aparecer mensagem de erro se não informar o campo(s) %s',
+    async (campos, payload) => {
+      const res = await request(prodApp)
+        .post('/usuarios')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(payload)
+        .expect(400);
+
+      if (campos === 'todos os campos obrigatórios') {
+        // verifica todos de uma vez
+        const allLabels = Object.values(fieldLabels);
+        expect(res.body.message).toContain(erroCamposObrigatorios(allLabels));
+      } else {
+        // individual ou combinação
+        const keys = campos.split(' e ');
+        keys.forEach(key => {
+          const label = fieldLabels[key];
+          expect(res.body.message).toContain(erroCampoObrigatorio(label));
+        });
+      }
+    }
+  );
+});
+
+
+
+
+

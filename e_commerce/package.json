@@ -16,14 +16,15 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon server.js",
-    "test": "jest --config jest.config.cjs",
+    "test": "cross-env NODE_ENV=test jest --config jest.config.cjs",
     "test:produto": "jest src/models/testes/Produto.test.js --config jest.config.cjs",
     "test:usuario": "jest src/models/testes/Usuario.test.js --config jest.config.cjs",
     "test:usuarioController": "jest src/controllers/testes/UsuarioController.test.js --config jest.config.cjs",
     "test:produtoController": "jest src/controllers/testes/ProdutoController.test.js --config jest.config.cjs",
     "test:carrinhoController": "jest src/controllers/testes/CarrinhoController.test.js --config jest.config.cjs",
     "test:pedidoController": "jest src/controllers/testes/PedidoController.test.js --config jest.config.cjs",
-    "test:emailValidacao": "jest src/utils/validacoes/testesValidacoes/emailValidacao.test.js --config jest.config.cjs"
+    "test:emailValidacao": "jest src/utils/validacoes/testesValidacoes/emailValidacao.test.js --config jest.config.cjs",
+    "start": "cross-env NODE_ENV=production node server.js"
   },
   "keywords": [],
   "author": "",

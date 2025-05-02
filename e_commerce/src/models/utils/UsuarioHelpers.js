@@ -5,29 +5,33 @@ const SALT_ROUNDS = 10;
 
 const counterSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  seq: { type: Number, default: 0 },
+  seq:  { type: Number, default: 0 },
 });
 
 const Counter = mongoose.model('Counter', counterSchema);
 
 export const enderecoSchema = new mongoose.Schema({
-  rua: { type: String },
-  numero: { type: Number },
-  complemento: { type: String },
-  bairro: { type: String },
-  cidade: { type: String },
-  estado: { type: String },
-  cep: { type: String },
-  pais: { type: String }
+  rua:        { type: String, required: true },
+  numero:     { type: Number, required: true },
+  complemento: { type: String, required: true },
+  bairro:     { type: String, required: true },
+  cidade:     { type: String, required: true },
+  estado:     { type: String, required: true },
+  cep:        { type: String, required: true },
+  pais:       { type: String, required: true }
 });
 
-// Hook unificado para gerar nome e data_nascimento se não informados
+// Hook unificado para gerar nome, data_nascimento e endereco se não informados
 export function anexarUsuarioHooks(usuarioSchema) {
   usuarioSchema.pre('validate', async function (next) {
-    try{
+    try {
+      // 1) Em produção, não preenche defaults
+      if (process.env.NODE_ENV === 'production') {
+        return next();
+      }
 
+      // 2) Auto-fill de nome e data_nascimento
       if (!this.nome || !this.data_nascimento) {
-        // Se não houver nenhum usuário na coleção, reseta o contador
         const count = await this.constructor.countDocuments();
         if (count === 0) {
           await Counter.findOneAndUpdate(
@@ -36,71 +40,64 @@ export function anexarUsuarioHooks(usuarioSchema) {
             { new: true, upsert: true }
           );
         }
-        
-        // Incrementa o contador para obter o novo valor de seq
         const ret = await Counter.findOneAndUpdate(
           { name: 'usuario' },
           { $inc: { seq: 1 } },
           { new: true, upsert: true }
         );
-  
         if (!this.nome) {
           this.nome = `Nome${ret.seq}`;
         }
-  
         if (!this.data_nascimento) {
-          const seq = ret.seq;
-          const dataBase = new Date(2000, 0, 1); // 1º de janeiro de 2000
-          // Adiciona (seq - 1) dias à data base, fazendo a rolagem automática de dias, meses e ano
-          dataBase.setDate(dataBase.getDate() + (seq - 1));
-          // Converte a data para string no formato YYYY-MM-DD para que o TipoData possa fazer o cast
+          const dataBase = new Date(2000, 0, 1);
+          dataBase.setDate(dataBase.getDate() + (ret.seq - 1));
           const ano = dataBase.getFullYear();
-          const mes = String(dataBase.getMonth() + 1).padStart(2, '0');
+          const mes = String(dataBase.getMonth()+1).padStart(2, '0');
           const dia = String(dataBase.getDate()).padStart(2, '0');
           this.data_nascimento = `${ano}-${mes}-${dia}`;
         }
       }
-      next();
-    } catch(erro){
-      next(erro);
+
+      // 3) Auto-fill de endereco no ambiente dev/test
+      if (!this.endereco || Object.keys(this.endereco).length === 0) {
+        this.endereco = {
+          rua: 'Rua Teste',
+          numero: 1,
+          complemento: 'Sem complemento',
+          bairro: 'Centro',
+          cidade: 'Cidade X',
+          estado: 'SP',
+          cep: '00000-000',
+          pais: 'Brasil'
+        };
+      }
+
+      return next();
+    } catch (err) {
+      return next(err);
     }
   });
 
-  // Hook para realizar o hash da senha, se necessário
+  // Hook para hash da senha
   usuarioSchema.pre('save', async function (next) {
-    if (!this.isModified('senha')) {
-      return next();
-    }
-
+    if (!this.isModified('senha')) return next();
     try {
-      const hash = await bcrypt.hash(this.senha, SALT_ROUNDS);
-      this.senha = hash;
+      this.senha = await bcrypt.hash(this.senha, SALT_ROUNDS);
       next();
     } catch (err) {
       next(err);
     }
   });
 
+  // Formatação de saída JSON e reordenação de chaves
   usuarioSchema.set('toJSON', {
-    transform: function (doc, ret) {
-      // Formata a data para ISO (YYYY-MM-DD) se existir
+    transform(doc, ret) {
       if (ret.data_nascimento) {
-        const isoCompleto = new Date(ret.data_nascimento).toISOString();
-        ret.data_nascimento = isoCompleto.split("T")[0];
+        const iso = new Date(ret.data_nascimento).toISOString();
+        ret.data_nascimento = iso.split('T')[0];
       }
-      
-      // Reordena as chaves conforme desejado
-      const { _id, nome, data_nascimento, email, senha, endereco, __v, ...resto } = ret;
-      return {
-        _id,
-        nome,
-        data_nascimento,
-        email,
-        senha,
-        endereco,
-        __v,
-        ...resto
-      };
+      const { _id, nome, data_nascimento, email, senha, endereco, __v, ...rest } = ret;
+      return { _id, nome, data_nascimento, email, senha, endereco, __v, ...rest };
     }
-  });  
+  });
 }

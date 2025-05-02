@@ -2,14 +2,18 @@ import mongoose from "mongoose";
 import { enderecoSchema, anexarUsuarioHooks } from './utils/UsuarioHelpers.js';
 import { concatenarItensComVirgulaAndE } from '../utils/formatarMensagens.js';
 import { EhEmailValido } from "../utils/validacoes/emailValidacao.js";
+import { erroCampoObrigatorio } from '../utils/mensagensErroUsuario.js';
 
 const PERFIS = ['CLIENTE', 'ADMINISTRADOR'];
 
 export const usuarioSchema = new mongoose.Schema({
-  nome: { type: String },
+  nome: { 
+    type: String, 
+    required: [true, erroCampoObrigatorio('Nome')]
+  },
   data_nascimento: {
     type: Date,
-    required: true,
+    required: [true, erroCampoObrigatorio('Data de Nascimento')],
     validate: [
       {
         validator: function (value) {
@@ -31,10 +35,13 @@ export const usuarioSchema = new mongoose.Schema({
       }
     ]
   },
-  endereco: enderecoSchema,
+  endereco: {
+    type: enderecoSchema,
+    required: [true, erroCampoObrigatorio('Endereço')]
+  },
   email: {
     type: String,
-    required: [true, 'E-mail é obrigatório'],
+    required: [true, erroCampoObrigatorio('Email')],
     unique: true,
     lowercase: true,
     trim: true,
@@ -47,7 +54,7 @@ export const usuarioSchema = new mongoose.Schema({
   },
   senha: {
     type: String,
-    required: [true, 'Senha é obrigatório'],
+    required: [true, erroCampoObrigatorio('Senha')],
   },
   perfil: {
     type: String,
