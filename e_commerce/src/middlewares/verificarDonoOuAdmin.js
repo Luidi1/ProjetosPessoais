@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import NaoEncontrado from '../erros/NaoEncontrado.js';
 import ErroRequisicao from '../erros/ErroRequisicao.js';
 import { erroFormatoIdInvalido, erroUsuarioIdNaoEncontrado } from '../utils/mensagensErroUsuario.js';
+import { erroAcessoNegado } from '../utils/mensagensErroPermissao.js'
 
 export default function verificarDonoOuAdmin(Model, nomeRecurso) {
   return async (req, res, next) => {
@@ -30,7 +31,7 @@ export default function verificarDonoOuAdmin(Model, nomeRecurso) {
           && perfilReq !== 'administrador'
           && perfilReq !== 'admin') {
         return res.status(403).json({
-          mensagem: `Acesso negado: você não é dono deste ${nomeRecurso}.`
+          mensagem: erroAcessoNegado(nomeRecurso)
         });
       }
 

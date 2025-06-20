@@ -9,16 +9,16 @@ import verificarAdmin from '../middlewares/verificarAdmin.js';
 const router = express.Router();
 
 router
-.get("/produtos", gerarVerificadorParametros(PARAMS_PAGINACAO), ProdutoController.listarProdutos, paginar)
-.get("/produtos/busca", gerarVerificadorParametros(PARAMS_PAGINACAO, PARAMS_PRODUTOS), ProdutoController.listarProdutoPorFiltro, paginar)
-.get("/produtos/:id", ProdutoController.listarProdutoPorId);
+.get("/", gerarVerificadorParametros(PARAMS_PAGINACAO), ProdutoController.listarProdutos, paginar)
+.get("/busca", gerarVerificadorParametros(PARAMS_PAGINACAO, PARAMS_PRODUTOS), ProdutoController.listarProdutoPorFiltro, paginar)
+.get("/:id", ProdutoController.listarProdutoPorId);
 
 router
     .use(autenticar)
 
-    .post("/produtos", verificarAdmin, ProdutoController.cadastrarProduto)
-    .put("/produtos/:id", verificarAdmin, ProdutoController.atualizarProduto)
-    .delete("/produtos/:id", verificarAdmin, ProdutoController.deletarProduto)
-    .delete("/produtos", verificarAdmin, ProdutoController.deletarTodosProdutos);
+    .post("/", verificarAdmin, ProdutoController.cadastrarProduto)
+    .put("/:id", verificarAdmin, ProdutoController.atualizarProduto)
+    .delete("/:id", verificarAdmin, ProdutoController.deletarProduto)
+    .delete("/", verificarAdmin, ProdutoController.deletarTodosProdutos);
     
 export default router;

@@ -1,4 +1,5 @@
 // src/middlewares/verificarAdmin.js
+import { erroPermissaoAdmin } from '../utils/mensagensErroPermissao.js';
 
 export default function verificarAdmin(req, res, next) {
   const perfil = (req.user.perfil || '').toString();
@@ -7,7 +8,7 @@ export default function verificarAdmin(req, res, next) {
   if (perfil.toLowerCase() !== 'administrador') {
     return res
       .status(403)
-      .json({ mensagem: 'Acesso negado: apenas administradores.' });
+      .json({ mensagem: erroPermissaoAdmin()});
   }
 
   next();

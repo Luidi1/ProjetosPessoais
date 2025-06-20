@@ -1,4 +1,5 @@
 // src/utils/mensagensErro.js
+import { concatenarItensComVirgulaAndE } from './formatarMensagens.js';
 
 // Parâmetros duplicados
 export const erroParamDuplicado = (param) =>
@@ -62,7 +63,22 @@ export const erroCampoObrigatorio = (campo) =>
   
 // Falta de múltiplos campos obrigatórios
 export const erroCamposObrigatorios = (campos) => {
-// campos é um array de nomes, ex: ['Nome','Endereço']
-const lista = campos.join(', ');
-return `Os campos ${lista} são obrigatórios`;
+    const lista = concatenarItensComVirgulaAndE(campos);
+    return `Os campos ${lista} são obrigatórios`;
+};
+
+/**
+ * Mensagem para um único campo inválido.
+ * @param {string} campo
+ */
+export const erroCampoInvalido = (campo) =>
+    `Campo inválido: {${campo}}`;
+  
+/**
+ * Mensagem para vários campos inválidos.
+ * @param {string[]} campos
+ */
+export const erroCamposInvalidos = (campos) => {
+const lista = concatenarItensComVirgulaAndE(campos);
+return `Campos inválidos: {${lista}}`;
 };

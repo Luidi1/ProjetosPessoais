@@ -9,4 +9,6 @@ export function EhEmailValido(email) {
       allow_numeric_tld: false       // não aceita TLDs como .123
     });
 }
+
+export default EhEmailValido;
   

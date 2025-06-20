@@ -7,6 +7,9 @@ import { concatenarItensComVirgulaAndE, formatarListaDeMensagens } from "../util
 import mongoose from "mongoose";
 import * as usuariosHelpers from "./utils/usuariosHelpers.js";
 import ErroCampoDuplicado from "../erros/ErroCampoDuplicado.js";
+import { erroCampoObrigatorio, erroCamposObrigatorios, erroCampoInvalido, erroCamposInvalidos } from '../utils/mensagensErroUsuario.js';
+import EhEmailValido from '../utils/validacoes/emailValidacao.js'
+import { erroFormatoEmail } from '../utils/validacoes/mensagensErroValidacao.js'
 
 class UsuarioController{
 
@@ -86,53 +89,62 @@ class UsuarioController{
 
     
 
-  static atualizarUsuario = async (req, res, next) => {
-    try {
-      const id = req.params.id;
-
-      // 1. Verifica se o ID é válido (ObjectId)
-      if (!mongoose.isValidObjectId(id)) {
-        throw new ErroRequisicao(`O ID {${id}} não é um ObjectId válido.`);
-      }
-
-      // 2. Verifica se o documento existe
-      const usuarioExistente = await Usuario.findById(id);
-      if (!usuarioExistente) {
-        throw new NaoEncontrado(`Usuário com id igual a {${id}} não encontrado.`);
-      }
-
-      // 3. Checa se há campos inválidos
-      const camposValidos   = Object.keys(Usuario.schema.obj);
-      const camposEnviados = Object.keys(req.body);
-      const camposInvalidos = camposEnviados.filter(c => !camposValidos.includes(c));
-
-      if (camposInvalidos.length > 0) {
-        const camposInvalidosStr = concatenarItensComVirgulaAndE(camposInvalidos);
-        const msg = camposInvalidos.length === 1
-          ? `Campo inválido: {${camposInvalidosStr}}`
-          : `Campos inválidos: {${camposInvalidosStr}}`;
-        throw new ErroRequisicao(msg);
-      }
-
-      // 4. Atualiza o usuário executando os validadores do schema (incluindo enum)
-      const usuarioResultado = await Usuario.findByIdAndUpdate(
-        id,
-        { $set: req.body },
-        {
-          new: true,           // retorna o documento atualizado
-          runValidators: true, // roda validações do schema
-          context: 'query'     // garante validação em operações de update
+    static atualizarUsuario = async (req, res, next) => {
+      try {
+        const id = req.params.id;  
+        // 1) Verifica se o ID é válido (ObjectId)
+        if (!mongoose.isValidObjectId(id)) {
+          throw new ErroRequisicao(`O ID {${id}} não é um ObjectId válido.`);
         }
-      );
-
-      res.status(200).json({
-        message: `Usuário com id igual a {${id}} atualizado com sucesso.`,
-        data: usuarioResultado
-      });
-    } catch (erro) {
-      next(erro);
-    }
-  };
+    
+        // 2) Verifica se o documento existe
+        const usuarioExistente = await Usuario.findById(id);
+        if (!usuarioExistente) {
+          throw new NaoEncontrado(`Usuário com id igual a {${id}} não encontrado.`);
+        }
+    
+        // 3) Checa se há campos inválidos
+        const camposValidos   = Object.keys(Usuario.schema.obj);
+        const camposEnviados = Object.keys(req.body);
+        const camposInvalidos = camposEnviados.filter(
+          c => !camposValidos.includes(c)
+        );
+    
+        if (camposInvalidos.length > 0) {
+          if (camposInvalidos.length === 1) {
+            // só um campo inválido
+            throw new ErroRequisicao(
+              erroCampoInvalido(camposInvalidos[0])
+            );
+          } else {
+            // mais de um campo inválido
+            throw new ErroRequisicao(
+              erroCamposInvalidos(camposInvalidos)
+            );
+          }
+        }
+        
+    
+        // 4) Atualiza o usuário com validações de schema
+        const usuarioResultado = await Usuario.findByIdAndUpdate(
+          id,
+          { $set: req.body },
+          {
+            new: true,
+            runValidators: true,
+            context: 'query'
+          }
+        );
+    
+        res.status(200).json({
+          message: `Usuário com id igual a {${id}} atualizado com sucesso.`,
+          data: usuarioResultado
+        });
+      } catch (erro) {
+        next(erro);
+      }
+    };
+    
 
 
   static deletarUsuario = async(req, res, next) =>{
@@ -165,18 +177,42 @@ class UsuarioController{
 
   static deletarTodosUsuarios = async (req, res, next) => {
     try {
-      // Remove todos os documentos da coleção de usuários
-      const resultado = await Usuario.deleteMany({});
-  
-      // Envia status 200 e informa quantos foram deletados
-      res.status(200).json({
-        message: 'Todos os usuários foram deletados com sucesso.',
-        data: {
-          totalUsuariosDeletados: resultado.deletedCount
+      // Obter lista de IDs de exceção do corpo da requisição
+      const { excecoes } = req.body; // espera um array de strings
+
+      // Construir filtro para exclusão
+      const filtro = {};
+      if (Array.isArray(excecoes) && excecoes.length > 0) {
+        // Validar formato de cada ID
+        const invalidos = excecoes.filter(id => !mongoose.Types.ObjectId.isValid(id));
+        if (invalidos.length > 0) {
+          // Mensagem de ID inválido
+          return res.status(400).json({ mensagem: erroFormatoIdInvalido(invalidos.join(",")) });
         }
+        // Filtrar _id que NÃO estejam nas exceções
+        filtro._id = { $nin: excecoes };
+      }
+
+      // Executa remoção
+      const resultado = await Usuario.deleteMany(filtro);
+
+      // Preparar dados de resposta
+      const responseData = { totalUsuariosDeletados: resultado.deletedCount };
+      if (Array.isArray(excecoes) && excecoes.length > 0) {
+        if (excecoes.length === 1) {
+          responseData['Exceção'] = 1;
+        } else {
+          responseData['Exceções'] = excecoes.length;
+        }
+      }
+
+      // Responde com status 200 e detalhes
+      return res.status(200).json({
+        message: 'Todos os usuários foram deletados com sucesso.',
+        data: responseData
       });
     } catch (erro) {
-      next(erro);
+      return next(erro);
     }
   }
 
@@ -185,35 +221,55 @@ class UsuarioController{
     try {
       const { email, senha } = req.body;
 
-      // Procura o usuário pelo email
+      // 1) Validação de campos obrigatórios
+      const camposFaltando = [];
+      if (!email) camposFaltando.push('Email');
+      if (!senha) camposFaltando.push('Senha');
+
+      if (camposFaltando.length > 0) {
+        const mensagem = camposFaltando.length > 1
+          ? erroCamposObrigatorios(camposFaltando)
+          : erroCampoObrigatorio(camposFaltando[0]);
+        return res.status(400).json({ message: mensagem });
+      }
+
+      // 2) Validação de formato de e-mail
+      if (!EhEmailValido(email)) {
+        return res.status(400).json({ message: erroFormatoEmail('email') });
+      }
+
+      // 3) Procura o usuário pelo e-mail
       const usuario = await Usuario.findOne({ email });
       if (!usuario) {
-        return res.status(401).json({ message: "Email não encontrado no sistema." });
+        return res
+          .status(401)
+          .json({ message: 'Email não encontrado no sistema.' });
       }
 
-      // Verifica se a senha está correta (compara o hash)
+      // 4) Verifica se a senha está correta
       const senhaValida = await bcrypt.compare(senha, usuario.senha);
       if (!senhaValida) {
-        return res.status(401).json({ message: "Senha incorreta." });
+        return res
+          .status(401)
+          .json({ message: 'Senha incorreta.' });
       }
 
-      // Se o login for bem-sucedido, gera um token JWT
-      // Certifique-se de definir uma chave secreta (JWT_SECRET) em suas variáveis de ambiente
+      // 5) Gera o token JWT
       const token = jwt.sign(
         { id: usuario._id, email: usuario.email, perfil: usuario.perfil },
-        process.env.JWT_SECRET,
-        /*{ expiresIn: "10h" }*/
+        process.env.JWT_SECRET
       );
 
+      // 6) Retorna sucesso
       res.status(200).json({
-        message: "Login realizado com sucesso.",
+        message: 'Login realizado com sucesso.',
         token,
       });
     } catch (erro) {
       console.error(erro);
       next(erro);
     }
-  }
+  };
 }
 
 export default UsuarioController;

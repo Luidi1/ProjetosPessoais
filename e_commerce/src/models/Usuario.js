@@ -5,6 +5,7 @@ import { EhEmailValido } from "../utils/validacoes/emailValidacao.js";
 import { erroCampoObrigatorio } from '../utils/mensagensErroUsuario.js';
 
 const PERFIS = ['CLIENTE', 'ADMINISTRADOR'];
+const isProd = process.env.NODE_ENV === 'production';
 
 export const usuarioSchema = new mongoose.Schema({
   nome: { 
@@ -37,7 +38,9 @@ export const usuarioSchema = new mongoose.Schema({
   },
   endereco: {
     type: enderecoSchema,
-    required: [true, erroCampoObrigatorio('Endereço')]
+    required: isProd 
+      ? [true, erroCampoObrigatorio('Endereço')] 
+      : false
   },
   email: {
     type: String,

@@ -15,10 +15,10 @@ const app = express();
 app.use(express.json());
 app.use(reordenaJson);
 
-app.use(produtos);
-app.use(usuario);
-app.use(carrinho);
-app.use(pedido);
+app.use("/produtos", produtos);
+app.use("/usuarios", usuario);
+//app.use("carrinho", carrinho);
+//app.use("pedido", pedido);
 
 app.use(manipulador404);
 app.use(manipuladorDeErros);

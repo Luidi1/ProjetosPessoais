@@ -12,17 +12,17 @@ const router = express.Router();
 
 //Rotoas públicas
 router
-    .post("/usuarios/login", UsuarioController.logarUsuario)
-    .post("/usuarios", UsuarioController.cadastrarUsuario);
+    .post("/login", UsuarioController.logarUsuario)
+    .post("/", UsuarioController.cadastrarUsuario);
 
 //Rotas autenticadas
 router
-    .use(autenticar)
-    .get("/usuarios/busca", gerarVerificadorParametros(PARAMS_PAGINACAO, PARAMS_USUARIOS), verificarAdmin, UsuarioController.listarUsuariosPorFiltro, paginar)
-    .get("/usuarios/:id", verificarDonoOuAdmin(Usuario, 'usuário'), UsuarioController.listarUsuarioPorId)
-    .get("/usuarios", gerarVerificadorParametros(PARAMS_PAGINACAO), verificarAdmin, UsuarioController.listarUsuarios, paginar)
-    .put("/usuarios/:id", verificarDonoOuAdmin(Usuario, "usuário"), UsuarioController.atualizarUsuario)
-    .delete("/usuarios/:id", verificarDonoOuAdmin(Usuario, "usuário"), UsuarioController.deletarUsuario)
-    .delete("/usuarios", verificarAdmin, UsuarioController.deletarTodosUsuarios);
+    
+    .get("/busca", autenticar, gerarVerificadorParametros(PARAMS_PAGINACAO, PARAMS_USUARIOS), verificarAdmin, UsuarioController.listarUsuariosPorFiltro, paginar)
+    .get("/:id", autenticar, verificarDonoOuAdmin(Usuario, 'usuário'), UsuarioController.listarUsuarioPorId)
+    .get("/", autenticar, gerarVerificadorParametros(PARAMS_PAGINACAO), verificarAdmin, UsuarioController.listarUsuarios, paginar)
+    .put("/:id", autenticar, verificarDonoOuAdmin(Usuario, "usuário"), UsuarioController.atualizarUsuario)
+    .delete("/:id", autenticar, verificarDonoOuAdmin(Usuario, "usuário"), UsuarioController.deletarUsuario)
+    .delete("/", autenticar, verificarAdmin, UsuarioController.deletarTodosUsuarios);
     
 export default router;

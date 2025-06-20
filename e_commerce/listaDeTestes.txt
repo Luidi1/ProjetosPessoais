@@ -1,9 +1,21 @@
 Testes:
 
-Usuários:
+USUÁRIOS:
 
-Rota: POST{{URLBase}}/usuarios/
+ROTAS PÚBLICAS:
 
+Rota: POST{{URLBase}}/usuarios/login (logarUsuario):
+-Login com sucesso, ou seja, passando o email e senha corretos (feito)
+-Token JWT válido e decodificável (feito)
+-Campo “email” ausente, deve aparecer a mensagem dizendo isso (feito)
+-Campo "email" no formato incorreto, deve aparecer a mensagem dizendo isso (feito)
+-Email não cadastrado retorna 401 e mensagem adequada (feito)
+-Campo "senha" ausente, deve aparecer a mensagem dizendo isso (feito)
+-Senha inválida retorna 401 e mensagem adequada (feito)
+obs: talvez fazer depois um formato correto de senha. (talvez a fazer)
+-Campos "email" e "senha" ausentes, deve aparecer a mensagem dizendo isso (feito)
+
+Rota: POST{{URLBase}}/usuarios/ (cadastrarUsuario):
 -Cadastrar um úsuario com sucesso, passando todos os campos de usuário.
 -Deve aparecer mensagem de erro se não informar o campo "nome".
 -Deve aparecer mensagem de erro se não informar o campo "data_nascimento".
@@ -17,26 +29,9 @@ Rota: POST{{URLBase}}/usuarios/
 -Deve aparecer mensagem de erro se não informar os campos "nome", "data_nascimento", "endereco", "email" e "senha".
 
 
+ROTAS AUTENTICADAS:
 
-Rota: GET{{URLBase}}/usuarios (listarUsuarios):
-
--Listar os usuários (feito)
--Validar email (feito)
--Mandar uma mensagem para o email, para verificar que existe o email.(a fazer)
--Validar senha (a fazer)
-obs:Quando coloca alguma coisa depois da rota como: "/aaa", aparece "Recurso não encontrado". Não seria melhor colocar 
-"Rota não encontrada"?(talvez a fazer)
-
-GET{{URLBase}}/usuarios/id (listarUsuariosPorId):
-
--Listar qualquer usuário pelo administrador (feito)
--Listar o usuário pelo dono do mesmo (feito)
--Não listar usuário por meio de um usuário que não seja administrador (feito)
--Passando um id no formato errado, o erro é da classe ErroRequisicao (feito)
--Passando um id inexistente, no formato correto, o erro é da classe NaoEncontrado (feito)
-
-GET{{URLBase}}/usuarios/busca?:
-
+Rota: GET{{URLBase}}/usuarios/busca? (listarUsuariosPorFiltro):
 -Listar todos usuários se não for passado nenhum parâmetro de busca (feito)
 -Listar todos usuários que começam com determinada sequência de letras passada pelo parâmetro de busca "nome"(feito)
 -Listar usuário ou usuários com nome específico passado pelo parâmetro de busca "nome" (feito)
@@ -65,6 +60,47 @@ arquivo que faz a validação do email, por causa que ele verifica só quando o 
 filtro "email" é feita de modo a listar os emails sem precisar escrever o email completo, de modo a facilitar ver emails
 parecidos. (talvez a fazer)
 
+Rota: GET{{URLBase}}/usuarios/id (listarUsuariosPorId):
+-Listar qualquer usuário pelo administrador (feito)
+-Listar o usuário pelo dono do mesmo (feito)
+-Não listar usuário por meio de um usuário que não seja administrador (feito)
+-Passando um id no formato errado, o erro é da classe ErroRequisicao (feito)
+-Passando um id inexistente, no formato correto, o erro é da classe NaoEncontrado (feito)
+
+Rota: GET{{URLBase}}/usuarios (listarUsuarios):
+-Listar os usuários (feito)
+-Validar email (feito)
+-Mandar uma mensagem para o email, para verificar que existe o email.(a fazer)
+-Validar senha (a fazer)
+obs:Quando coloca alguma coisa depois da rota como: "/aaa", aparece "Recurso não encontrado". Não seria melhor colocar 
+"Rota não encontrada"?(talvez a fazer)
+
+Rota: PUT{{URLBase}}/usuarios/id (atualizarUsuario):
+-Atualizar todos os campos de qualquer usuário sendo administrador (feito)
+-Atualizar todos os campos do usuário sendo o dono (feito)
+-Negar a permissão de atualizar um usuário que não seja o dono ou administrador (feito)
+-Aparecer mensagem de erro caso passe o ID no formato inválido (feito)
+-Aparecer mensagem de erro caso passe o ID não cadastrado no sistema (feito)
+-Aparecer mensagem de erro caso tente atualizar campo inexistente (feito)
+-Atualizar um campo e verificar se os demais permanecem iguais, fazer isso com cada campo (feito)
+
+Rota: DELETE{{URLBase}}/usuarios/id (deletarUsuario):
+-Deletar qualquer usuário sendo administrador (feito)
+-Deletar o usuário sendo o dono (feito)
+-Negar a permissão de deletar um usuário que não seja o dono ou administrador (feito)
+-Aparecer mensagem de erro caso passe o ID no formato inválido (feito)
+-Aparecer mensagem de erro caso passe o ID não cadastrado no sistema (feito)
+-Aparecer mensagem de erro caso o token seja inválido (feito)
+-Aparecer mensagem de erro caso o token seja inexistente (feito)
+
+Rota: DELETE{{URLBase}}/usuarios/id (deletarTodosUsuarios):
+-Deletar todos usuários sendo administrador
+-Negar a permissão de deletar um usuário que não seja o dono ou administrador
+-Deletar todos usuários exceto os Ids informados 
+
+
 OBS: Talvez seja bom mostrar em todos os GET, quantos documentos foram encontrados, quantas páginas deu de acordo com os
 parâmetro de paginação "limite" e qual é o limite(que pode ser definido pelo usuário ou usar o valor padrão). (talvez a fazer)
-
+OBS2: Tem q arrumar para q quando for passado um tipo errado ao q o campo espera, apareça mensagem de erro 
+dizendo isso(a fazer)
+OBS3: Tem q fazer uma rota pra deletar todos usuarios menos os selecionados. (a fazer)
