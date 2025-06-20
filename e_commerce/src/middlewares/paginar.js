@@ -1,62 +1,74 @@
-import ErroRequisicao from "../erros/ErroRequisicao.js";
-import {formatarListaDeMensagens} from "../utils/formatarMensagens.js";
+import mongoose from 'mongoose';
+import ErroRequisicao from '../erros/ErroRequisicao.js';
+import { formatarListaDeMensagens } from '../utils/formatarMensagens.js';
 
 export const PARAMS_PAGINACAO = [
-    "limite",
-    "pagina",
-    "ordenacao"
+  'limite',
+  'pagina',
+  'ordenacao'
 ];
 
-async function paginar(req, res, next){
+async function paginar(req, res, next) {
   try {
-    let { limite = 5, pagina = 1, ordenacao = "_id:-1" } = req.query;
+    // 1) Leitura e conversão dos parâmetros
+    let { limite: limiteDocumentoPorPagina = 5, pagina: paginaAtual = 1, ordenacao = '_id:-1' } = req.query;
+    limiteDocumentoPorPagina = parseInt(limiteDocumentoPorPagina, 10);
+    paginaAtual = parseInt(paginaAtual, 10);
+    const [campoOrdenacao, ordemStr] = ordenacao.split(':');
+    const ordem = parseInt(ordemStr, 10);
 
-    // Converte para números
-    limite = parseInt(limite);
-    pagina = parseInt(pagina);
-
-    let [campoOrdenacao, ordem] = ordenacao.split(":");
-    ordem = parseInt(ordem);
-
-    // Cria um array para acumular erros
+    // 2) Validações iniciais
     const erros = [];
-
-    // Valida "limite"
-    if (isNaN(limite) || limite <= 0) {
-      erros.push("Valor informado para LIMITE é inválido");
+    if (isNaN(limiteDocumentoPorPagina) || limiteDocumentoPorPagina <= 0) {
+      erros.push('Valor informado para LIMITE é inválido');
     }
-    // Valida "pagina"
-    if (isNaN(pagina) || pagina <= 0) {
-      erros.push("Valor informado para PÁGINA é inválido");
+    if (isNaN(paginaAtual) || paginaAtual <= 0) {
+      erros.push('Valor informado para PÁGINA é inválido');
     }
-    // Valida "ordenacao"
     if (!campoOrdenacao || isNaN(ordem) || (ordem !== 1 && ordem !== -1)) {
       erros.push("O formato do parâmetro 'ordenacao' está inválido. Formato esperado: 'ordenacao=campo:1' ou 'ordenacao=campo:-1'");
     } else {
-      // Valida se campoOrdenacao existe no modelo
+      // verifica se o campo existe no schema
       const resultado = req.resultado;
       const camposPermitidos = Object.keys(resultado.schema.paths);
       if (!camposPermitidos.includes(campoOrdenacao)) {
-        erros.push(`Campo de ordenação ${campoOrdenacao} inválido. Campos permitidos: ${camposPermitidos.join(", ")}`);
+        erros.push(`Campo de ordenação ${campoOrdenacao} inválido. Campos permitidos: ${camposPermitidos.join(', ')}`);
       }
     }
 
-    // Se houver erros, lance o erro de requisição
+    // Se houver erros, dispara ErroRequisicao
     if (erros.length > 0) {
-      // Supondo que seu formatarListaDeMensagens une com "; " e finaliza com "."
       const mensagemFinal = formatarListaDeMensagens(erros);
       return next(new ErroRequisicao(mensagemFinal));
     }
 
-    // Se todas as validações passaram, executa a consulta paginada
+    // 3) Contagem total de documentos para meta
     const resultado = req.resultado;
-    const resultadoPaginado = await resultado.find()
+    const totalDocumentos = await resultado.countDocuments();
+    const totalPaginas = Math.ceil(totalDocumentos / limiteDocumentoPorPagina) || 1;
+
+    // 4) Checar página inexistente
+    if (paginaAtual > totalPaginas) {
+      return next(new ErroRequisicao(`Página ${paginaAtual} inexistente. Existem apenas ${totalPaginas} páginas.`));
+    }
+
+    // 5) Consulta paginada
+    const itens = await resultado.find()
       .sort({ [campoOrdenacao]: ordem })
-      .skip((pagina - 1) * limite)
-      .limit(limite)
+      .skip((paginaAtual - 1) * limiteDocumentoPorPagina)
+      .limit(limiteDocumentoPorPagina)
       .exec();
 
-    res.status(200).json(resultadoPaginado);
+    // 6) Resposta com metadados antes dos dados
+    return res.status(200).json({
+      info: {
+        totalDocumentos,
+        totalPaginas,
+        paginaAtual,
+        limiteDocumentoPorPagina
+      },
+      data: itens
+    });
   } catch (erro) {
     next(erro);
   }

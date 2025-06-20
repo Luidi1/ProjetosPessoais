@@ -13,17 +13,16 @@ import { erroFormatoEmail } from '../utils/validacoes/mensagensErroValidacao.js'
 
 class UsuarioController{
 
-    static listarUsuarios = async(req, res, next) =>{
-        try{
-            const usuarioResultado = Usuario.find();
-
-            req.resultado = usuarioResultado;
-
-            next();
-        } catch(erro){
-            next(erro);
-        }
+  static listarUsuarios = (req, res, next) => {
+    try {
+      // Em vez de Usuario.find(), passe o Model puro
+      req.resultado = Usuario;  
+      return next();
+    } catch (erro) {
+      return next(erro);
     }
+  }
+  
 
     static listarUsuarioPorId = async(req, res, next) =>{
 

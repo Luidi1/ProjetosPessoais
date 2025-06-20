@@ -88,16 +88,4 @@ export function anexarUsuarioHooks(usuarioSchema) {
       next(err);
     }
   });
-
-  // Formatação de saída JSON e reordenação de chaves
-  usuarioSchema.set('toJSON', {
-    transform(doc, ret) {
-      if (ret.data_nascimento) {
-        const iso = new Date(ret.data_nascimento).toISOString();
-        ret.data_nascimento = iso.split('T')[0];
-      }
-      const { _id, nome, data_nascimento, email, senha, endereco, __v, ...rest } = ret;
-      return { _id, nome, data_nascimento, email, senha, endereco, __v, ...rest };
-    }
-  });
 }

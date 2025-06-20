@@ -16,17 +16,17 @@ obs: talvez fazer depois um formato correto de senha. (talvez a fazer)
 -Campos "email" e "senha" ausentes, deve aparecer a mensagem dizendo isso (feito)
 
 Rota: POST{{URLBase}}/usuarios/ (cadastrarUsuario):
--Cadastrar um úsuario com sucesso, passando todos os campos de usuário.
--Deve aparecer mensagem de erro se não informar o campo "nome".
--Deve aparecer mensagem de erro se não informar o campo "data_nascimento".
--Deve aparecer mensagem de erro se não informar o campo "endereco".
--Deve aparecer mensagem de erro se não informar o campo "email".
--Deve aparecer mensagem de erro se não informar o campo "senha".
--Deve aparecer mensagem de erro se não informar os campos "nome" e "data_nascimento".
--Deve aparecer mensagem de erro se não informar os campos "nome" e "endereco".
--Deve aparecer mensagem de erro se não informar os campos "nome" e "email".
--Deve aparecer mensagem de erro se não informar os campos "nome" e "senha".
--Deve aparecer mensagem de erro se não informar os campos "nome", "data_nascimento", "endereco", "email" e "senha".
+-Cadastrar um úsuario com sucesso, passando todos os campos de usuário. (feito)
+-Deve aparecer mensagem de erro se não informar o campo "nome". (feito)
+-Deve aparecer mensagem de erro se não informar o campo "data_nascimento". (feito)
+-Deve aparecer mensagem de erro se não informar o campo "endereco". (feito)
+-Deve aparecer mensagem de erro se não informar o campo "email". (feito)
+-Deve aparecer mensagem de erro se não informar o campo "senha". (feito)
+-Deve aparecer mensagem de erro se não informar os campos "nome" e "data_nascimento". (feito)
+-Deve aparecer mensagem de erro se não informar os campos "nome" e "endereco". (feito)
+-Deve aparecer mensagem de erro se não informar os campos "nome" e "email". (feito)
+-Deve aparecer mensagem de erro se não informar os campos "nome" e "senha". (feito)
+-Deve aparecer mensagem de erro se não informar os campos "nome", "data_nascimento", "endereco", "email" e "senha". (feito)
 
 
 ROTAS AUTENTICADAS:
@@ -53,7 +53,7 @@ não existe e listar os valores válidos. (feito)
 máxima passada pelo parêmtro de busca "maxData_nascimento", que começam com determinada sequência de letras passada
 pelo parâmetro de busca "nome" e que tenham determinado tipo de perfil passado pelo parâmetro de busca "perfil" (feito)
 -Listar todos usuários que começam com determinada sequência de letras passada pelo parâmetro de busca "email" (feito)
--Se não encontrar nenhum email, deve aparecer uma mensagem dizendo isso.
+-Se não encontrar nenhum email, deve aparecer uma mensagem dizendo isso. (feito)
 obs: Nós não verificamos se o email está no formato correto, pois isso já é verificado na hora de cadastrar, mas poderíamos
 verificar com fim de informar que o email que tu está procurando está no formato errado. Isso não poderia reusar nosso
 arquivo que faz a validação do email, por causa que ele verifica só quando o email está completo, mas nossa busca pelo
@@ -94,13 +94,7 @@ Rota: DELETE{{URLBase}}/usuarios/id (deletarUsuario):
 -Aparecer mensagem de erro caso o token seja inexistente (feito)
 
 Rota: DELETE{{URLBase}}/usuarios/id (deletarTodosUsuarios):
--Deletar todos usuários sendo administrador
--Negar a permissão de deletar um usuário que não seja o dono ou administrador
--Deletar todos usuários exceto os Ids informados 
+-Deletar todos usuários sendo administrador (feito)
+-Negar a permissão de deletar um usuário que não seja o dono ou administrador (feito)
+-Deletar todos usuários exceto os Ids informados (feito)
 
-
-OBS: Talvez seja bom mostrar em todos os GET, quantos documentos foram encontrados, quantas páginas deu de acordo com os
-parâmetro de paginação "limite" e qual é o limite(que pode ser definido pelo usuário ou usar o valor padrão). (talvez a fazer)
-OBS2: Tem q arrumar para q quando for passado um tipo errado ao q o campo espera, apareça mensagem de erro 
-dizendo isso(a fazer)
-OBS3: Tem q fazer uma rota pra deletar todos usuarios menos os selecionados. (a fazer)
