@@ -104,18 +104,20 @@ class CarrinhoController {
   }
 
   // DELETE /carrinho
-  static limparCarrinho = async (req, res, next) => {
-    try {
-      const carrinho = await Carrinho.findOneAndUpdate(
-        { usuario: req.user.id },
-        { $set: { itens: [] }, atualizadoEm: Date.now() },
-        { new: true }
-      );
-      res.status(200).json({ message: 'Carrinho esvaziado.', data: carrinho });
-    } catch (erro) {
-      next(erro);
-    }
+  // DELETE /carrinho
+static limparCarrinho = async (req, res, next) => {
+  try {
+    const carrinho = await Carrinho.findOneAndUpdate(
+      { usuario: req.user.id },
+      { $set: { itens: [] }, atualizadoEm: Date.now() },
+      { new: true, upsert: true }  // <- cria o carrinho vazio se ainda não existir
+    );
+    res.status(200).json({ message: 'Carrinho esvaziado.', data: carrinho });
+  } catch (erro) {
+    next(erro);
   }
+};
+
 }
 
 export default CarrinhoController;

@@ -9,18 +9,18 @@ router
   .use(autenticar)
 
   // GET  /carrinho               → lista o carrinho do usuário
-  .get('/carrinho', CarrinhoController.listarCarrinho)
+  .get('/', CarrinhoController.listarCarrinho)
 
   // POST /carrinho               → adiciona item (ou cria carrinho)
-  .post('/carrinho', CarrinhoController.adicionarItem)
+  .post('/', CarrinhoController.adicionarItem)
 
   // PUT  /carrinho/item/:itemId  → atualiza quantidade do item
-  .put('/carrinho/:itemId', CarrinhoController.atualizarItem)
+  .put('/:itemId', CarrinhoController.atualizarItem)
 
   // DELETE /carrinho/item/:itemId→ remove um item do carrinho
-  .delete('/carrinho/:itemId', CarrinhoController.removerItem)
+  .delete('/:itemId', CarrinhoController.removerItem)
 
   // DELETE /carrinho             → esvazia o carrinho
-  .delete('/carrinho', CarrinhoController.limparCarrinho);
+  .delete('/', CarrinhoController.limparCarrinho);
 
 export default router;

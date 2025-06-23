@@ -1,4 +1,5 @@
 // src/controllers/PedidoController.js
+import mongoose from 'mongoose';
 import Carrinho from '../models/Carrinho.js';
 import Pedido from '../models/Pedido.js';
 import Produto from '../models/Produto.js';
@@ -10,18 +11,17 @@ class PedidoController {
   static criarPedido = async (req, res, next) => {
     try {
       const usuarioId = req.user.id;
-      // ⬇️ pega do corpo da requisição
       const { formaPagamento, enderecoEntrega } = req.body;
-  
+
       // 1) Busca o carrinho do usuário
       const carrinho = await Carrinho
         .findOne({ usuario: usuarioId })
         .populate('itens.produto');
-  
+
       if (!carrinho || carrinho.itens.length === 0) {
-        throw new ErroRequisicao('Carrinho vazio. Não é possível criar pedido.');
+        return res.status(400).json({ mensagem: 'Carrinho vazio. Não é possível criar pedido.' });
       }
-  
+
       // 2) Monta itens do pedido e calcula valorTotal
       const itensDoPedido = carrinho.itens.map(item => ({
         produto: item.produto._id,
@@ -29,72 +29,55 @@ class PedidoController {
         precoUnitario: item.produto.preco,
         precoItem: item.quantidade * item.produto.preco
       }));
-      const valorTotal = itensDoPedido
-        .reduce((sum, i) => sum + i.precoItem, 0);
-  
+      const valorTotal = itensDoPedido.reduce((sum, i) => sum + i.precoItem, 0);
+
       // 3) Verifica estoque e reduz
       for (const linha of itensDoPedido) {
-        const produto = await Produto.findById(linha.produto);
-        if (!produto) {
-          throw new NaoEncontrado(`Produto com id ${linha.produto} não encontrado.`);
+        const produtoDoc = await Produto.findById(linha.produto);
+        if (!produtoDoc) {
+          return res.status(404).json({ mensagem: `Produto com id ${linha.produto} não encontrado.` });
         }
-        if (produto.estoque < linha.quantidade) {
-          throw new ErroRequisicao(
-            `Estoque insuficiente para o produto ${produto.nome}. Disponível: ${produto.estoque}, solicitado: ${linha.quantidade}`
-          );
+        if (produtoDoc.estoque < linha.quantidade) {
+          return res.status(400).json({
+            mensagem: `Estoque insuficiente para o produto ${produtoDoc.nome}. Disponível: ${produtoDoc.estoque}, solicitado: ${linha.quantidade}`
+          });
         }
-        produto.estoque -= linha.quantidade;
-        await produto.save();
+        produtoDoc.estoque -= linha.quantidade;
+        await produtoDoc.save();
       }
-  
-      // 4) Cria o pedido COM TODOS OS CAMPOS OBRIGATÓRIOS
+
+      // 4) Cria o pedido
       const pedido = new Pedido({
         usuario: usuarioId,
         itens: itensDoPedido,
-        valorTotal,          // nome correto
-        formaPagamento,      // vindo de req.body
-        enderecoEntrega      // vindo de req.body
+        valorTotal,
+        formaPagamento,
+        enderecoEntrega
       });
       const pedidoSalvo = await pedido.save();
-  
-      // 5) Limpa o carrinho
+
+      // 5) Limpa o carrinho (lazy-create se necessário)
       await Carrinho.findOneAndUpdate(
         { usuario: usuarioId },
-        { $set: { itens: [], atualizadoEm: Date.now() } }
+        { $set: { itens: [], atualizadoEm: Date.now() } },
+        { new: true, upsert: true }
       );
-  
-      res.status(201).json({
-        message: 'Pedido criado com sucesso!',
-        pedido: pedidoSalvo
-      });
+
+      return res.status(201).json({ message: 'Pedido criado com sucesso!', pedido: pedidoSalvo });
     } catch (erro) {
-      next(erro);
+      return next(erro);
     }
   };
-  
 
-  // MÉTODO AUXILIAR: conta quantos pedidos este usuário tem
-  static contarPedidosDoUsuario = async (usuarioId) => {
-    return Pedido.countDocuments({ usuario: usuarioId });
-  }
-
-  // GET /pedido → lista todos os pedidos do usuário autenticado, com total
+  // GET /pedido → lista todos os pedidos do usuário autenticado
   static listarPedidos = async (req, res, next) => {
     try {
       const usuarioId = req.user.id;
-
-      // 1) Busca os pedidos
-      const pedidos = await Pedido
-        .find({ usuario: usuarioId })
-        .populate('itens.produto');
-
-      // 2) Conta quantos pedidos esse usuário tem
-      const total = await PedidoController.contarPedidosDoUsuario(usuarioId);
-
-      // 3) Retorna o total e a lista
-      res.status(200).json({ total, pedidos });
+      const pedidos = await Pedido.find({ usuario: usuarioId }).populate('itens.produto');
+      const total = await Pedido.countDocuments({ usuario: usuarioId });
+      return res.status(200).json({ total, pedidos });
     } catch (erro) {
-      next(erro);
+      return next(erro);
     }
   };
 
@@ -102,16 +85,20 @@ class PedidoController {
   static listarPedidoPorId = async (req, res, next) => {
     try {
       const { id } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ mensagem: `ID em formato inválido: ${id}` });
+      }
+
       const pedido = await Pedido
         .findOne({ _id: id, usuario: req.user.id })
         .populate('itens.produto');
-
       if (!pedido) {
-        throw new NaoEncontrado(`Pedido com id ${id} não encontrado para este usuário.`);
+        return res.status(404).json({ mensagem: `Pedido com id ${id} não encontrado para este usuário.` });
       }
-      res.status(200).json(pedido);
+
+      return res.status(200).json(pedido);
     } catch (erro) {
-      next(erro);
+      return next(erro);
     }
   };
 
@@ -119,6 +106,10 @@ class PedidoController {
   static cancelarPedido = async (req, res, next) => {
     try {
       const { id } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ mensagem: `ID em formato inválido: ${id}` });
+      }
+
       const pedido = await Pedido.findOneAndUpdate(
         { _id: id, usuario: req.user.id, status: { $in: ['PENDENTE'] } },
         { $set: { status: 'CANCELADO', atualizadoEm: Date.now() } },
@@ -126,11 +117,12 @@ class PedidoController {
       ).populate('itens.produto');
 
       if (!pedido) {
-        throw new NaoEncontrado(`Pedido não encontrado ou não pode ser cancelado.`);
+        return res.status(404).json({ mensagem: `Pedido não encontrado ou não pode ser cancelado.` });
       }
-      res.status(200).json(pedido);
+
+      return res.status(200).json(pedido);
     } catch (erro) {
-      next(erro);
+      return next(erro);
     }
   };
 
@@ -138,24 +130,28 @@ class PedidoController {
   static deletarPedido = async (req, res, next) => {
     try {
       const { id } = req.params;
-      const pedido = await Pedido.findByIdAndDelete(id);
-
-      if (!pedido) {
-        throw new NaoEncontrado(`Pedido com id ${id} não encontrado.`);
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ mensagem: `ID em formato inválido: ${id}` });
       }
-      res.status(200).json({ mensagem: 'Pedido deletado com sucesso.' });
+
+      const pedidoDeletado = await Pedido.findByIdAndDelete(id);
+      if (!pedidoDeletado) {
+        return res.status(404).json({ mensagem: `Pedido com id ${id} não encontrado.` });
+      }
+
+      return res.status(200).json({ mensagem: 'Pedido deletado com sucesso.' });
     } catch (erro) {
-      next(erro);
+      return next(erro);
     }
   };
 
   // DELETE /pedido → hard-delete de todos os pedidos (apenas admin)
   static deletarTodosPedidos = async (req, res, next) => {
     try {
-      await Pedido.deleteMany();
-      res.status(200).json({ mensagem: 'Todos os pedidos foram deletados.' });
+      await Pedido.deleteMany({});
+      return res.status(200).json({ mensagem: 'Todos os pedidos foram deletados.' });
     } catch (erro) {
-      next(erro);
+      return next(erro);
     }
   };
 }

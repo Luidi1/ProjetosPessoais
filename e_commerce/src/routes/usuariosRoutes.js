@@ -13,7 +13,9 @@ const router = express.Router();
 //Rotoas públicas
 router
     .post("/login", UsuarioController.logarUsuario)
-    .post("/", UsuarioController.cadastrarUsuario);
+    .post("/", UsuarioController.cadastrarUsuario)
+    .get('/confirmar/:token', UsuarioController.confirmarUsuario);
+      
 
 //Rotas autenticadas
 router

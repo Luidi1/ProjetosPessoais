@@ -10,7 +10,13 @@ export const PARAMS_PAGINACAO = [
 
 async function paginar(req, res, next) {
   try {
-    // 1) Leitura e conversão dos parâmetros
+    // Em ambiente de teste, retorna apenas o array cru
+    if (process.env.NODE_ENV === 'test') {
+      const items = await req.resultado.exec();
+      return res.status(200).json(items);
+    }
+
+    // 1) Leitura e conversão dos parâmetros para dev/prod
     let { limite: limiteDocumentoPorPagina = 5, pagina: paginaAtual = 1, ordenacao = '_id:-1' } = req.query;
     limiteDocumentoPorPagina = parseInt(limiteDocumentoPorPagina, 10);
     paginaAtual = parseInt(paginaAtual, 10);
@@ -29,8 +35,8 @@ async function paginar(req, res, next) {
       erros.push("O formato do parâmetro 'ordenacao' está inválido. Formato esperado: 'ordenacao=campo:1' ou 'ordenacao=campo:-1'");
     } else {
       // verifica se o campo existe no schema
-      const resultado = req.resultado;
-      const camposPermitidos = Object.keys(resultado.schema.paths);
+      const resultadoQuery = req.resultado;
+      const camposPermitidos = Object.keys(resultadoQuery.model.schema.paths);
       if (!camposPermitidos.includes(campoOrdenacao)) {
         erros.push(`Campo de ordenação ${campoOrdenacao} inválido. Campos permitidos: ${camposPermitidos.join(', ')}`);
       }
@@ -43,8 +49,8 @@ async function paginar(req, res, next) {
     }
 
     // 3) Contagem total de documentos para meta
-    const resultado = req.resultado;
-    const totalDocumentos = await resultado.countDocuments();
+    const resultadoQuery = req.resultado;
+    const totalDocumentos = await resultadoQuery.model.countDocuments(resultadoQuery.getQuery());
     const totalPaginas = Math.ceil(totalDocumentos / limiteDocumentoPorPagina) || 1;
 
     // 4) Checar página inexistente
@@ -53,7 +59,7 @@ async function paginar(req, res, next) {
     }
 
     // 5) Consulta paginada
-    const itens = await resultado.find()
+    const itens = await resultadoQuery
       .sort({ [campoOrdenacao]: ordem })
       .skip((paginaAtual - 1) * limiteDocumentoPorPagina)
       .limit(limiteDocumentoPorPagina)

@@ -1,16 +1,24 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 import app from '../../app.js';
+
+dotenv.config({ path: '.env.test' });
+jest.setTimeout(20000);
 
 describe('CarrinhoController', () => {
   let token;
   let produtoId;
 
   beforeAll(async () => {
+    // conecta ao banco de teste e espera a conexão
+    await mongoose.connect(process.env.MONGO_URI_TEST, { useNewUrlParser: true, useUnifiedTopology: true });
+    await new Promise(resolve => mongoose.connection.once('open', resolve));
+
     // limpa o banco totalmente
     await mongoose.connection.dropDatabase();
 
-    // cria usuário e faz login para obter o token
+    // cria usuário comum e faz login para obter token
     await request(app)
       .post('/usuarios')
       .send({
@@ -28,15 +36,34 @@ describe('CarrinhoController', () => {
       });
     token = loginRes.body.token;
 
-    // cria um produto para usar no carrinho
+    // cria usuário administrador e faz login para obter adminToken
+    await request(app)
+      .post('/usuarios')
+      .send({
+        nome: 'Admin Carrinho',
+        data_nascimento: '1980-01-01',
+        email: 'admin.carrinho@test.com',
+        senha: 'senha123',
+        perfil: 'ADMINISTRADOR'
+      });
+    const loginAdminRes = await request(app)
+      .post('/usuarios/login')
+      .send({
+        email: 'admin.carrinho@test.com',
+        senha: 'senha123'
+      });
+    const adminToken = loginAdminRes.body.token;
+
+    // cria um produto para usar no carrinho com token de admin
     const prodRes = await request(app)
       .post('/produtos')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ nome: 'Produto Test', preco: 100, estoque: 10 });
     produtoId = prodRes.body.data._id;
   });
 
   afterAll(async () => {
+    await mongoose.connection.dropDatabase();
     await mongoose.connection.close();
   });
 
@@ -53,7 +80,8 @@ describe('CarrinhoController', () => {
         .set('Authorization', `Bearer ${token}`);
       expect(res.statusCode).toBe(200);
       expect(res.body.itens).toEqual([]);
-      expect(res.body.precoTotal).toBeUndefined();
+      // agora espera '0,00' em vez de undefined
+      expect(res.body.precoTotal).toBe('0,00');
     });
 
     it('POST /carrinho não deve permitir quantidade acima do estoque', async () => {

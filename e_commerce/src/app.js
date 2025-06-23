@@ -17,8 +17,8 @@ app.use(reordenaJson);
 
 app.use("/produtos", produtos);
 app.use("/usuarios", usuario);
-//app.use("carrinho", carrinho);
-//app.use("pedido", pedido);
+app.use("/carrinho", carrinho);
+app.use("/pedido", pedido);
 
 app.use(manipulador404);
 app.use(manipuladorDeErros);

@@ -1,14 +1,23 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.test' });
+
 import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../app.js';
+
+jest.setTimeout(30000);
 
 describe('PedidoController', () => {
   let token;        // usuário comum
   let adminToken;   // usuário administrador
   let produtoId;
 
-  // Cria usuário, obtém token e produto para usar nos testes
   beforeAll(async () => {
+    // Conecta ao banco de teste
+    await mongoose.connect(process.env.MONGO_URI_TEST, { useNewUrlParser: true, useUnifiedTopology: true });
+    await new Promise(resolve => mongoose.connection.once('open', resolve));
+
+    // Limpa o banco
     await mongoose.connection.dropDatabase();
 
     // 1) Cria usuário comum e faz login
@@ -25,7 +34,7 @@ describe('PedidoController', () => {
       .send({ email: 'pedido@test.com', senha: 'senha123' });
     token = loginRes.body.token;
 
-    // 2) Cria usuário administrador via API
+    // 2) Cria usuário administrador e faz login
     await request(app)
       .post('/usuarios')
       .send({
@@ -40,16 +49,16 @@ describe('PedidoController', () => {
       .send({ email: 'admin@test.com', senha: 'senha123' });
     adminToken = loginAdminRes.body.token;
 
-    // 3) Cria produto
+    // 3) Cria produto como admin
     const prodRes = await request(app)
       .post('/produtos')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ nome: 'ProdutoPedido', preco: 50, estoque: 5 });
     produtoId = prodRes.body.data._id;
   });
 
-  // Fecha conexão
   afterAll(async () => {
+    await mongoose.connection.dropDatabase();
     await mongoose.connection.close();
   });
 
@@ -89,6 +98,12 @@ describe('PedidoController', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ produto: produtoId, quantidade: 2 });
 
+      // DEBUG: estado do carrinho após adicionar item
+      const cartRes = await request(app)
+        .get('/carrinho')
+        .set('Authorization', `Bearer ${token}`);
+      console.log('Estado do carrinho após adicionar item:', cartRes.statusCode, cartRes.body);
+
       const res = await request(app)
         .post('/pedido')
         .set('Authorization', `Bearer ${token}`)
@@ -124,11 +139,10 @@ describe('PedidoController', () => {
     let primeiroPedidoId;
 
     beforeAll(async () => {
-      // Garante ao menos um pedido existente
-      const pedidos = await request(app)
+      const res = await request(app)
         .get('/pedido')
         .set('Authorization', `Bearer ${token}`);
-      primeiroPedidoId = pedidos.body.pedidos[0]._id;
+      primeiroPedidoId = res.body.pedidos[0]._id;
     });
 
     it('GET /pedido deve retornar total e lista de pedidos', async () => {
@@ -163,7 +177,6 @@ describe('PedidoController', () => {
     let pendenteId;
 
     beforeAll(async () => {
-      // Cria um novo pedido para cancelar
       await request(app)
         .post('/carrinho')
         .set('Authorization', `Bearer ${token}`)
@@ -199,7 +212,6 @@ describe('PedidoController', () => {
     let tempId;
 
     beforeAll(async () => {
-      // Cria um novo pedido para exclusão
       await request(app)
         .post('/carrinho')
         .set('Authorization', `Bearer ${token}`)
@@ -237,12 +249,17 @@ describe('PedidoController', () => {
     });
 
     it('DELETE /pedido com ADMIN apaga todos os pedidos', async () => {
-      // Cria alguns pedidos adicionais
-      await request(app).post('/carrinho').set('Authorization', `Bearer ${token}`).send({ produto: produtoId, quantidade: 1 });
-      await request(app).post('/pedido').set('Authorization', `Bearer ${token}`).send({
-        formaPagamento: 'PIX',
-        enderecoEntrega: { rua: 'Rua', numero: '2', bairro: 'B', cidade: 'C', uf: 'SP', cep: '22222-222' }
-      });
+      await request(app)
+        .post('/carrinho')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ produto: produtoId, quantidade: 1 });
+      await request(app)
+        .post('/pedido')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          formaPagamento: 'PIX',
+          enderecoEntrega: { rua: 'Rua', numero: '2', bairro: 'B', cidade: 'C', uf: 'SP', cep: '22222-222' }
+        });
 
       const res = await request(app)
         .delete('/pedido')
@@ -250,7 +267,6 @@ describe('PedidoController', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveProperty('mensagem', 'Todos os pedidos foram deletados.');
 
-      // Confirma que não há pedidos
       const lista = await request(app)
         .get('/pedido')
         .set('Authorization', `Bearer ${token}`);

@@ -1,25 +1,31 @@
-// src/routes/pedidoRoutes.js
-import { Router } from 'express';
+import express from 'express';
 import PedidoController from '../controllers/PedidoController.js';
 import autenticar from '../middlewares/autenticar.js';
 import verificarDonoOuAdmin from '../middlewares/verificarDonoOuAdmin.js';
 import verificarAdmin from '../middlewares/verificarAdmin.js';
+import Pedido from '../models/Pedido.js';
 
-const router = Router();
+const router = express.Router();
 
-// → 1) Aplica autenticação a todas as rotas
+// Aplica autenticação a todas as rotas de pedido
 router.use(autenticar);
 
-// → 2) Cria e lista **seus** pedidos (qualquer usuário logado)
-router.get('/pedido', PedidoController.listarPedidos);
-router.post('/pedido', PedidoController.criarPedido);
+// → lista todos os pedidos do usuário logado
+router.get('/', PedidoController.listarPedidos);
 
-// → 3) Só dono ou admin podem ver/cancelar um pedido específico
-router.get('/pedido/:id', verificarDonoOuAdmin, PedidoController.listarPedidoPorId);
-router.put('/pedido/:id/cancelar', verificarDonoOuAdmin, PedidoController.cancelarPedido);
+// → cria um novo pedido
+router.post('/', PedidoController.criarPedido);
 
-// → 4) Só admin faz **hard‑delete**
-router.delete('/pedido/:id', verificarAdmin, PedidoController.deletarPedido);
-router.delete('/pedido', verificarAdmin, PedidoController.deletarTodosPedidos);
+// → só dono ou admin podem ver um pedido específico
+router.get('/:id', verificarDonoOuAdmin(Pedido, 'pedido'), PedidoController.listarPedidoPorId);
+
+// → só dono ou admin podem cancelar
+router.put('/:id/cancelar', verificarDonoOuAdmin(Pedido, 'pedido'), PedidoController.cancelarPedido);
+
+// → só admin faz hard-delete de um pedido
+router.delete('/:id', verificarAdmin, PedidoController.deletarPedido);
+
+// → só admin faz hard-delete de todos os pedidos
+router.delete('/', verificarAdmin, PedidoController.deletarTodosPedidos);
 
 export default router;

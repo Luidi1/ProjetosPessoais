@@ -3,6 +3,7 @@ import { enderecoSchema, anexarUsuarioHooks } from './utils/UsuarioHelpers.js';
 import { concatenarItensComVirgulaAndE } from '../utils/formatarMensagens.js';
 import { EhEmailValido } from "../utils/validacoes/emailValidacao.js";
 import { erroCampoObrigatorio } from '../utils/mensagensErroUsuario.js';
+import * as crypto from 'crypto';
 
 const PERFIS = ['CLIENTE', 'ADMINISTRADOR'];
 const isProd = process.env.NODE_ENV === 'production';
@@ -71,6 +72,16 @@ export const usuarioSchema = new mongoose.Schema({
         }.`
     },
     default: PERFIS[0]
+  },
+  isVerified: {
+    type: Boolean,
+    default: process.env.NODE_ENV === 'test' ? true : false
+  },
+  // Novo! token de confirmação gerado automaticamente
+  verifyToken: {
+    type: String,
+    default: () => crypto.randomBytes(16).toString('hex'),
+    select: false    // não retorna por padrão nas consultas
   }
 }, {
   id: false

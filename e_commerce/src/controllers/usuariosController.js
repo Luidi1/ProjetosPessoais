@@ -10,143 +10,176 @@ import ErroCampoDuplicado from "../erros/ErroCampoDuplicado.js";
 import { erroCampoObrigatorio, erroCamposObrigatorios, erroCampoInvalido, erroCamposInvalidos } from '../utils/mensagensErroUsuario.js';
 import EhEmailValido from '../utils/validacoes/emailValidacao.js'
 import { erroFormatoEmail } from '../utils/validacoes/mensagensErroValidacao.js'
+import { sendVerificationEmail } from "../servicos/ServicoEmail.js";
 
-class UsuarioController{
+class UsuarioController {
 
   static listarUsuarios = (req, res, next) => {
     try {
       // Em vez de Usuario.find(), passe o Model puro
-      req.resultado = Usuario;  
+      req.resultado = Usuario.find();
       return next();
     } catch (erro) {
       return next(erro);
     }
   }
-  
 
-    static listarUsuarioPorId = async(req, res, next) =>{
 
-        try{
-            const id = req.params.id;
-    
-            const usuarioResultado = await Usuario.findById(id);
-    
-            if(usuarioResultado){
-                res.status(200).json(usuarioResultado);
-            } else{
-                throw new NaoEncontrado(`Usuário com id igual a {${id}} não encontrado`);
-            }
-        } catch(erro){
-            next(erro);
-        }
-    }
+  static listarUsuarioPorId = async (req, res, next) => {
 
-    static listarUsuariosPorFiltro = async (req, res, next) => {
-      try {
-        // 1. Executa verificações individuais (agora incluindo perfil e email)
-        const [erroNome, erroDataNascimento, erroPerfil, erroEmail] = await Promise.all([
-          usuariosHelpers.verificarFiltroNome(req.query),
-          usuariosHelpers.verificarFiltroData_nascimento(req.query),
-          usuariosHelpers.verificarFiltroPerfil(req.query),
-          usuariosHelpers.verificarFiltroEmail(req.query)
-        ]);
-  
-        // 2. Se qualquer filtro isolado não tiver resultado, retorna o erro
-        const erros = [erroNome, erroDataNascimento, erroPerfil, erroEmail].filter(msg => msg !== null);
-        if (erros.length > 0) {
-          const mensagemFinal = formatarListaDeMensagens(erros);
-          throw new NaoEncontrado(mensagemFinal);
-        }
-  
-        // 3. Se todas as verificações passarem, constrói a busca combinada
-        const busca = await usuariosHelpers.processaBusca(req.query);
-        req.resultado = Usuario.find(busca);
-  
-        next();
-      } catch (erro) {
-        next(erro);
+    try {
+      const id = req.params.id;
+
+      const usuarioResultado = await Usuario.findById(id);
+
+      if (usuarioResultado) {
+        res.status(200).json(usuarioResultado);
+      } else {
+        throw new NaoEncontrado(`Usuário com id igual a {${id}} não encontrado`);
       }
+    } catch (erro) {
+      next(erro);
     }
+  }
 
-    static cadastrarUsuario = async(req, res, next) =>{
-      try{
-          let usuario = new Usuario(req.body);
+  static listarUsuariosPorFiltro = async (req, res, next) => {
+    try {
+      // 1. Executa verificações individuais (agora incluindo perfil e email)
+      const [erroNome, erroDataNascimento, erroPerfil, erroEmail] = await Promise.all([
+        usuariosHelpers.verificarFiltroNome(req.query),
+        usuariosHelpers.verificarFiltroData_nascimento(req.query),
+        usuariosHelpers.verificarFiltroPerfil(req.query),
+        usuariosHelpers.verificarFiltroEmail(req.query)
+      ]);
 
-          const usuarioResultado = await usuario.save();
-
-          res.status(201).json({
-              message: 'Usuário criado com sucesso.',
-              data: usuarioResultado
-          });
-      } catch(erro){
-          if (erro.code === 11000) {
-            return next(new ErroCampoDuplicado(erro));
-          }
-          next(erro);
+      // 2. Se qualquer filtro isolado não tiver resultado, retorna o erro
+      const erros = [erroNome, erroDataNascimento, erroPerfil, erroEmail].filter(msg => msg !== null);
+      if (erros.length > 0) {
+        const mensagemFinal = formatarListaDeMensagens(erros);
+        throw new NaoEncontrado(mensagemFinal);
       }
+
+      // 3. Se todas as verificações passarem, constrói a busca combinada
+      const busca = await usuariosHelpers.processaBusca(req.query);
+      req.resultado = Usuario.find(busca);
+
+      next();
+    } catch (erro) {
+      next(erro);
     }
+  }
 
-    
-
-    static atualizarUsuario = async (req, res, next) => {
-      try {
-        const id = req.params.id;  
-        // 1) Verifica se o ID é válido (ObjectId)
-        if (!mongoose.isValidObjectId(id)) {
-          throw new ErroRequisicao(`O ID {${id}} não é um ObjectId válido.`);
-        }
-    
-        // 2) Verifica se o documento existe
-        const usuarioExistente = await Usuario.findById(id);
-        if (!usuarioExistente) {
-          throw new NaoEncontrado(`Usuário com id igual a {${id}} não encontrado.`);
-        }
-    
-        // 3) Checa se há campos inválidos
-        const camposValidos   = Object.keys(Usuario.schema.obj);
-        const camposEnviados = Object.keys(req.body);
-        const camposInvalidos = camposEnviados.filter(
-          c => !camposValidos.includes(c)
-        );
-    
-        if (camposInvalidos.length > 0) {
-          if (camposInvalidos.length === 1) {
-            // só um campo inválido
-            throw new ErroRequisicao(
-              erroCampoInvalido(camposInvalidos[0])
-            );
-          } else {
-            // mais de um campo inválido
-            throw new ErroRequisicao(
-              erroCamposInvalidos(camposInvalidos)
-            );
-          }
-        }
-        
-    
-        // 4) Atualiza o usuário com validações de schema
-        const usuarioResultado = await Usuario.findByIdAndUpdate(
-          id,
-          { $set: req.body },
-          {
-            new: true,
-            runValidators: true,
-            context: 'query'
-          }
-        );
-    
-        res.status(200).json({
-          message: `Usuário com id igual a {${id}} atualizado com sucesso.`,
-          data: usuarioResultado
-        });
-      } catch (erro) {
-        next(erro);
+  static cadastrarUsuario = async (req, res, next) => {
+    try {
+      // 1) Cria e salva o usuário
+      const usuario = new Usuario(req.body);
+      const usuarioResultado = await usuario.save();
+  
+      // 2) Dispara o e-mail (não bloqueia testes)
+      await sendVerificationEmail(
+        usuarioResultado.email,
+        usuarioResultado.verifyToken
+      );
+  
+      // 3) Constrói o objeto de retorno:
+      //    - base: todos os campos salvos (inclui _id)
+      //    - em test: adiciona o verifyToken para facilitar Postman/Jest
+      const base = usuarioResultado.toObject();
+      const data = process.env.NODE_ENV === 'test'
+        ? { ...base, verifyToken: usuarioResultado.verifyToken }
+        : base;
+  
+      // 4) Retorna 201 com o objeto completo
+      return res.status(201).json({
+        message: 'Usuário criado com sucesso.',
+        data
+      });
+    } catch (erro) {
+      if (erro.code === 11000) {
+        return next(new ErroCampoDuplicado(erro));
       }
-    };
-    
+      next(erro);
+    }
+  };
+  
+
+  static confirmarUsuario = async (req, res, next) => {
+    try {
+      const { token } = req.params;
+      // precisa do select para pegar o verifyToken escondido
+      const usuario = await Usuario.findOne({ verifyToken: token }).select('+verifyToken');
+      if (!usuario) {
+        throw new ErroRequisicao('Token inválido ou expirado.');
+      }
+      usuario.isVerified  = true;
+      usuario.verifyToken = undefined;
+      await usuario.save();
+      return res.status(200).json({ message: 'E-mail confirmado com sucesso!' });
+    } catch (erro) {
+      next(erro);
+    }
+  }
+  
+
+  static atualizarUsuario = async (req, res, next) => {
+    try {
+      const id = req.params.id;
+      // 1) Verifica se o ID é válido (ObjectId)
+      if (!mongoose.isValidObjectId(id)) {
+        throw new ErroRequisicao(`O ID {${id}} não é um ObjectId válido.`);
+      }
+
+      // 2) Verifica se o documento existe
+      const usuarioExistente = await Usuario.findById(id);
+      if (!usuarioExistente) {
+        throw new NaoEncontrado(`Usuário com id igual a {${id}} não encontrado.`);
+      }
+
+      // 3) Checa se há campos inválidos
+      const camposValidos = Object.keys(Usuario.schema.obj);
+      const camposEnviados = Object.keys(req.body);
+      const camposInvalidos = camposEnviados.filter(
+        c => !camposValidos.includes(c)
+      );
+
+      if (camposInvalidos.length > 0) {
+        if (camposInvalidos.length === 1) {
+          // só um campo inválido
+          throw new ErroRequisicao(
+            erroCampoInvalido(camposInvalidos[0])
+          );
+        } else {
+          // mais de um campo inválido
+          throw new ErroRequisicao(
+            erroCamposInvalidos(camposInvalidos)
+          );
+        }
+      }
 
 
-  static deletarUsuario = async(req, res, next) =>{
+      // 4) Atualiza o usuário com validações de schema
+      const usuarioResultado = await Usuario.findByIdAndUpdate(
+        id,
+        { $set: req.body },
+        {
+          new: true,
+          runValidators: true,
+          context: 'query'
+        }
+      );
+
+      res.status(200).json({
+        message: `Usuário com id igual a {${id}} atualizado com sucesso.`,
+        data: usuarioResultado
+      });
+    } catch (erro) {
+      next(erro);
+    }
+  };
+
+
+
+  static deletarUsuario = async (req, res, next) => {
     try {
       const id = req.params.id;
 

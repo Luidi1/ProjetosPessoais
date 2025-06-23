@@ -355,6 +355,7 @@ describe('Rota: POST /usuarios — criação e validação de campos obrigatóri
   let prodApp, adminTokenProd;
 
   beforeAll(async () => {
+    jest.resetModules();
     process.env.NODE_ENV = 'production';
     require('dotenv').config({ path: '.env.test' });
     process.env.MONGO_URI = process.env.MONGO_URI_TEST;
@@ -463,6 +464,10 @@ describe('Rota: POST /usuarios — criação e validação de campos obrigatóri
       }
     }
   );
+  afterAll(() => { 
+    jest.resetModules();
+    process.env.NODE_ENV = 'test' 
+  });
 });
 
 // ——— Suíte de LOGIN usando hook anexarUsuarioHooks ——————————
@@ -789,11 +794,17 @@ describe('Rota: DELETE /usuarios/:id (deletarUsuario)', () => {
       useNewUrlParser:    true,
       useUnifiedTopology: true
     });
+  });
 
-    // Limpa coleção
+  afterAll(async () => {
+    // Fecha conexão
+    await mongoose.connection.close();
+  });
+
+  beforeEach(async () => {
+    // Limpa coleção e recria usuários para isolar estado
     await Usuario.deleteMany({});
 
-    // Cria três usuários: admin, user e other
     const admin = await Usuario.create({
       nome: 'AdminDel',
       email: 'admin.del@example.com',
@@ -820,15 +831,9 @@ describe('Rota: DELETE /usuarios/:id (deletarUsuario)', () => {
     userId      = user._id.toString();
     otherUserId = other._id.toString();
 
-    // Gera tokens JWT
     const JWT_SECRET = process.env.JWT_SECRET || 'testsecret';
     adminToken = jwt.sign({ id: adminId, perfil: admin.perfil }, JWT_SECRET);
     userToken  = jwt.sign({ id: userId,  perfil: user.perfil  }, JWT_SECRET);
-  });
-
-  afterAll(async () => {
-    // Fecha conexão
-    await mongoose.connection.close();
   });
 
   test('Admin pode deletar qualquer usuário', async () => {

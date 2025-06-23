@@ -98,3 +98,5 @@ Rota: DELETE{{URLBase}}/usuarios/id (deletarTodosUsuarios):
 -Negar a permissão de deletar um usuário que não seja o dono ou administrador (feito)
 -Deletar todos usuários exceto os Ids informados (feito)
 
+OBS1: Ver se não tem Hard-Code nos testes, caso possamos usar funções em vez disso.
+

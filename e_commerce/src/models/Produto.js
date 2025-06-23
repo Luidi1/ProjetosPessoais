@@ -20,7 +20,8 @@ const produtoSchema = new mongoose.Schema({
     imagem: {type: String},
     marca: {type: String},
     dataCriacao: {type: Date, default: Date.now},
-    dataAtualizacao: {type: Date, default: Date.now}
+    dataAtualizacao: {type: Date, default: Date.now},
+    
 });
 
 const Produto = mongoose.model("Produto", produtoSchema);
