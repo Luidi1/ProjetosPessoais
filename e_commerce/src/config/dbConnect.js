@@ -1,7 +1,3 @@
-import dotenv from "dotenv";
-// Carrega .env.test se estiver em modo de teste, senão carrega o padrão
-dotenv.config({ path: process.env.NODE_ENV === "test" ? ".env.test" : ".env" });
-
 import mongoose from "mongoose";
 
 async function connectDB() {
