@@ -10,7 +10,7 @@ import carrinho from "./routes/carrinhoRoutes.js";
 import reordenaJson from './middlewares/reordenaJson.js';
 import pedido from './routes/pedidoRoutes.js'
 
-dbConnect();
+dbConnect();    
 const app = express();
 app.use(express.json());
 app.use(reordenaJson);

@@ -7,7 +7,8 @@ import { concatenarItensComVirgulaAndE, formatarListaDeMensagens } from "../util
 import mongoose from "mongoose";
 import * as usuariosHelpers from "./utils/usuariosHelpers.js";
 import ErroCampoDuplicado from "../erros/ErroCampoDuplicado.js";
-import { erroCampoObrigatorio, erroCamposObrigatorios, erroCampoInvalido, erroCamposInvalidos } from '../utils/mensagensErroUsuario.js';
+import { erroCampoObrigatorio, erroCamposObrigatorios, erroCampoInvalido, erroCamposInvalidos } 
+from '../utils/mensagensErroUsuario.js';
 import EhEmailValido from '../utils/validacoes/emailValidacao.js'
 import { erroFormatoEmail } from '../utils/validacoes/mensagensErroValidacao.js'
 import { sendVerificationEmail } from "../servicos/ServicoEmail.js";
@@ -16,14 +17,12 @@ class UsuarioController {
 
   static listarUsuarios = (req, res, next) => {
     try {
-      // Em vez de Usuario.find(), passe o Model puro
       req.resultado = Usuario.find();
       return next();
     } catch (erro) {
       return next(erro);
     }
   }
-
 
   static listarUsuarioPorId = async (req, res, next) => {
 
@@ -120,54 +119,50 @@ class UsuarioController {
     }
   }
   
-
   static atualizarUsuario = async (req, res, next) => {
     try {
       const id = req.params.id;
-      // 1) Verifica se o ID é válido (ObjectId)
+  
       if (!mongoose.isValidObjectId(id)) {
         throw new ErroRequisicao(`O ID {${id}} não é um ObjectId válido.`);
       }
-
-      // 2) Verifica se o documento existe
+  
       const usuarioExistente = await Usuario.findById(id);
       if (!usuarioExistente) {
         throw new NaoEncontrado(`Usuário com id igual a {${id}} não encontrado.`);
       }
-
-      // 3) Checa se há campos inválidos
-      const camposValidos = Object.keys(Usuario.schema.obj);
+  
+      // 3) Checa campos inválidos (nível de topo)
+      const camposValidos = Object.keys(Usuario.schema.obj); // ["nome","data_nascimento","endereco",...]
       const camposEnviados = Object.keys(req.body);
-      const camposInvalidos = camposEnviados.filter(
-        c => !camposValidos.includes(c)
-      );
-
+      const camposInvalidos = camposEnviados.filter(c => !camposValidos.includes(c));
       if (camposInvalidos.length > 0) {
-        if (camposInvalidos.length === 1) {
-          // só um campo inválido
-          throw new ErroRequisicao(
-            erroCampoInvalido(camposInvalidos[0])
-          );
-        } else {
-          // mais de um campo inválido
-          throw new ErroRequisicao(
-            erroCamposInvalidos(camposInvalidos)
-          );
+        throw new ErroRequisicao(
+          camposInvalidos.length === 1
+            ? erroCampoInvalido(camposInvalidos[0])
+            : erroCamposInvalidos(camposInvalidos)
+        );
+      }
+  
+      // 🔑 4) Monta o $set sem sobrescrever subdocumentos
+      const update = {};
+      // copia campos de topo passado pelo usuário para atualizar EXCETO "endereco"
+      for (const [k, v] of Object.entries(req.body)) {
+        if (k !== 'endereco') update[k] = v;
+      }
+      // se veio "endereco" como objeto, transforma em Notação de ponto(dot-notation
+      if (req.body.endereco && typeof req.body.endereco === 'object' && !Array.isArray(req.body.endereco)) {
+        for (const [k, v] of Object.entries(req.body.endereco)) {
+          update[`endereco.${k}`] = v; // ex.: endereco.rua = "Av. Central, 100"
         }
       }
-
-
-      // 4) Atualiza o usuário com validações de schema
+  
       const usuarioResultado = await Usuario.findByIdAndUpdate(
         id,
-        { $set: req.body },
-        {
-          new: true,
-          runValidators: true,
-          context: 'query'
-        }
+        { $set: update },
+        { new: true, runValidators: true, context: 'query' }
       );
-
+  
       res.status(200).json({
         message: `Usuário com id igual a {${id}} atualizado com sucesso.`,
         data: usuarioResultado
@@ -176,9 +171,7 @@ class UsuarioController {
       next(erro);
     }
   };
-
-
-
+  
   static deletarUsuario = async (req, res, next) => {
     try {
       const id = req.params.id;

@@ -42,7 +42,7 @@ export const usuarioSchema = new mongoose.Schema({
     required: isProd 
       ? [true, erroCampoObrigatorio('Endereço')] 
       : false
-  },
+  }, 
   email: {
     type: String,
     required: [true, erroCampoObrigatorio('Email')],
