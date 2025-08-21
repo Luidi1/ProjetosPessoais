@@ -1,6 +1,6 @@
 // src/erros/ErroValidacao.js
 import mongoose from "mongoose";
-import ErroBase from "./erroBase.js";
+import ErroBase from "./ErroBase.js";
 import {
   erroCampoObrigatorio,
   erroCamposObrigatorios
@@ -14,6 +14,8 @@ export default class ErroValidacao extends ErroBase {
   }
 
   enviarResposta(res) {
+
+
     // 1) Descobre nome do modelo (útil para ordernar campos do schema)
     const modelName = getModelNameFromError(this.erroValidacao);
 
@@ -65,7 +67,7 @@ export default class ErroValidacao extends ErroBase {
         : resto;
     }
 
-    return res.status(this.status).json({ message: mensagemFinal });
+    return res.status(this.status).json({ mensagem: mensagemFinal });
   }
 }
 

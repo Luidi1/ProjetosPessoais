@@ -39,6 +39,18 @@ const validParamsStr = concatenarItensComVirgulaAndE([
   ...PARAMS_USUARIOS
 ]);
 
+// Endereço padrão para testes (necessário porque o schema exige `endereco`)
+const ENDERECO_FIXO = {
+  rua: 'Rua Teste',
+  numero: 1,
+  complemento: 'Sem complemento',
+  bairro: 'Centro',
+  cidade: 'Cidade X',
+  estado: 'SP',
+  cep: '00000-000',
+  pais: 'Brasil'
+};
+
 // ——— Conecta e desconecta uma vez —————————————
 beforeAll(async () => {
   await mongoose.connect(process.env.MONGO_URI, {
@@ -63,21 +75,24 @@ describe('Rota: GET /usuarios (listarUsuarios)', () => {
       email: 'admin@example.com',
       senha: 'Pass123!',
       perfil: 'administrador',
-      data_nascimento: new Date('2000-01-01')
+      data_nascimento: new Date('2000-01-01'),
+      endereco: ENDERECO_FIXO
     });
     const user = await Usuario.create({
       nome: 'User',
       email: 'user@example.com',
       senha: 'Pass123!',
       perfil: 'cliente',
-      data_nascimento: new Date('1990-05-05')
+      data_nascimento: new Date('1990-05-05'),
+      endereco: ENDERECO_FIXO
     });
     const other = await Usuario.create({
       nome: 'Other',
       email: 'other@example.com',
       senha: 'Pass123!',
       perfil: 'cliente',
-      data_nascimento: new Date('1995-06-06')
+      data_nascimento: new Date('1995-06-06'),
+      endereco: ENDERECO_FIXO
     });
 
     userId      = user._id.toString();
@@ -356,11 +371,7 @@ describe('Rota: POST /usuarios — criação e validação de campos obrigatóri
 
   beforeAll(async () => {
     jest.resetModules();
-    process.env.NODE_ENV = 'production';
-    require('dotenv').config({ path: '.env.test' });
-    process.env.MONGO_URI = process.env.MONGO_URI_TEST;
 
-    jest.resetModules();
     prodApp = require('../../app.js').default;
 
     const UsuarioProd = require('../../models/Usuario.js').default;
@@ -392,6 +403,9 @@ describe('Rota: POST /usuarios — criação e validação de campos obrigatóri
     );
   });
 
+  // Sufixo único para esta suíte de testes (evita e-mail duplicado entre casos)
+  const uniq = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
   const basePayload = {
     nome: 'Teste Usuário',
     data_nascimento: '1995-01-01',
@@ -405,7 +419,8 @@ describe('Rota: POST /usuarios — criação e validação de campos obrigatóri
       cep: '00000-000',
       pais: 'Brasil'
     },
-    email: 'teste@exemplo.com',
+    // e-mail único para o teste de sucesso
+    email: `teste.sucesso+${uniq}@exemplo.com`,
     senha: 'Senha123!'
   };
 
@@ -417,7 +432,8 @@ describe('Rota: POST /usuarios — criação e validação de campos obrigatóri
     senha: 'Senha'
   };
 
-  const casosErro = [
+  // Casos base
+  const _casosErroBase = [
     ['nome',            { ...basePayload, nome: undefined }],
     ['data_nascimento', { ...basePayload, data_nascimento: undefined }],
     ['endereco',        { ...basePayload, endereco: undefined }],
@@ -429,6 +445,20 @@ describe('Rota: POST /usuarios — criação e validação de campos obrigatóri
     ['nome e senha',           { ...basePayload, nome: undefined, senha: undefined }],
     ['todos os campos obrigatórios', {}]
   ];
+
+  // Para cada caso que ainda possui "email" definido, tornamos esse email único
+  const casosErro = _casosErroBase.map(([rotulo, payload], idx) => {
+    if (payload && payload.email) {
+      return [
+        rotulo,
+        { 
+          ...payload,
+          email: `teste.${idx}+${uniq}@exemplo.com`
+        }
+      ];
+    }
+    return [rotulo, payload];
+  });
 
   test('Cadastrar um usuário com sucesso, passando todos os campos de usuário', async () => {
     const res = await request(prodApp)
@@ -449,14 +479,15 @@ describe('Rota: POST /usuarios — criação e validação de campos obrigatóri
         .set('Authorization', `Bearer ${adminTokenProd}`)
         .send(payload)
         .expect(400);
+
       if (campos === 'todos os campos obrigatórios') {
-        expect(res.body.message).toContain(
+        expect(res.body.mensagem).toContain(
           erroCamposObrigatorios(Object.values(fieldLabels))
         );
       } else {
         const keys = campos.split(' e ');
         const labels = keys.map(k => fieldLabels[k]);
-        expect(res.body.message).toContain(
+        expect(res.body.mensagem).toContain(
           keys.length > 1
             ? erroCamposObrigatorios(labels)
             : erroCampoObrigatorio(labels[0])
@@ -464,11 +495,13 @@ describe('Rota: POST /usuarios — criação e validação de campos obrigatóri
       }
     }
   );
-  afterAll(() => { 
+
+  afterAll(() => {
     jest.resetModules();
-    process.env.NODE_ENV = 'test' 
+    process.env.NODE_ENV = 'test';
   });
 });
+
 
 // ——— Suíte de LOGIN usando hook anexarUsuarioHooks ——————————
 describe('Rota: POST /usuarios/login', () => {
@@ -484,7 +517,8 @@ describe('Rota: POST /usuarios/login', () => {
       email: userEmail,
       senha: userPassword,
       perfil: 'cliente',
-      data_nascimento: '1990-01-01'
+      data_nascimento: '1990-01-01',
+      endereco: ENDERECO_FIXO
       // o hook anexarUsuarioHooks vai injetar `endereco` automaticamente
     });
     loginUserId = u._id.toString();  // ← captura o ID para o teste
@@ -609,21 +643,24 @@ describe('Rota: PUT /usuarios/:id (atualizarUsuario)', () => {
       email: 'admin@teste.com',
       senha: userPassword,
       perfil: 'ADMINISTRADOR',
-      data_nascimento: '1990-01-01'
+      data_nascimento: '1990-01-01',
+      endereco: ENDERECO_FIXO
     });
     const user = await Usuario.create({
       nome: 'User',
       email: 'user@teste.com',
       senha: userPassword,
       perfil: 'CLIENTE',
-      data_nascimento: '1990-01-01'
+      data_nascimento: '1990-01-01',
+      endereco: ENDERECO_FIXO
     });
     const other = await Usuario.create({
       nome: 'Other',
       email: 'other@teste.com',
       senha: userPassword,
       perfil: 'CLIENTE',
-      data_nascimento: '1990-01-01'
+      data_nascimento: '1990-01-01',
+      endereco: ENDERECO_FIXO
     });
 
     const JWT_SECRET = process.env.JWT_SECRET;
@@ -749,7 +786,8 @@ describe('Rota: PUT /usuarios/:id (atualizarUsuario)', () => {
         email: emailUnico,
         senha: userPassword,
         perfil: 'CLIENTE',
-        data_nascimento: '1990-01-01'
+        data_nascimento: '1990-01-01',
+        endereco: ENDERECO_FIXO
       });
       const orig = await Usuario.findById(u0._id).lean();
 
@@ -810,21 +848,24 @@ describe('Rota: DELETE /usuarios/:id (deletarUsuario)', () => {
       email: 'admin.del@example.com',
       senha: 'Pass123!',
       perfil: 'ADMINISTRADOR',
-      data_nascimento: '1990-01-01'
+      data_nascimento: '1990-01-01',
+      endereco: ENDERECO_FIXO
     });
     const user = await Usuario.create({
       nome: 'UserDel',
       email: 'user.del@example.com',
       senha: 'Pass123!',
       perfil: 'CLIENTE',
-      data_nascimento: '1991-02-02'
+      data_nascimento: '1991-02-02',
+      endereco: ENDERECO_FIXO
     });
     const other = await Usuario.create({
       nome: 'OtherDel',
       email: 'other.del@example.com',
       senha: 'Pass123!',
       perfil: 'CLIENTE',
-      data_nascimento: '1992-03-03'
+      data_nascimento: '1992-03-03',
+      endereco: ENDERECO_FIXO
     });
 
     adminId     = admin._id.toString();
@@ -924,21 +965,24 @@ describe('Rota: DELETE /usuarios/:id (deletarUsuario)', () => {
         email: 'admin.all@example.com',
         senha: 'Pass123!',
         perfil: 'ADMINISTRADOR',
-        data_nascimento: '1990-01-01'
+        data_nascimento: '1990-01-01',
+        endereco: ENDERECO_FIXO
       });
       const u1 = await Usuario.create({
         nome: 'UserOne',
         email: 'user.one@example.com',
         senha: 'Pass123!',
         perfil: 'CLIENTE',
-        data_nascimento: '1991-02-02'
+        data_nascimento: '1991-02-02',
+        endereco: ENDERECO_FIXO
       });
       const u2 = await Usuario.create({
         nome: 'UserTwo',
         email: 'user.two@example.com',
         senha: 'Pass123!',
         perfil: 'CLIENTE',
-        data_nascimento: '1992-03-03'
+        data_nascimento: '1992-03-03',
+        endereco: ENDERECO_FIXO
       });
   
       adminId  = admin._id.toString();

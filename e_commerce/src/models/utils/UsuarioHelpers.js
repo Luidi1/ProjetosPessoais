@@ -26,7 +26,7 @@ export function anexarUsuarioHooks(usuarioSchema) {
   usuarioSchema.pre('validate', async function (next) {
     try {
       // 1) Em produção, não preenche defaults
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV !== 'development') {
         return next();
       }
 

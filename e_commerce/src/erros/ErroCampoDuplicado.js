@@ -1,4 +1,4 @@
-import ErroBase from "./erroBase.js";
+import ErroBase from "./ErroBase.js";
 
 class ErroCampoDuplicado extends ErroBase {
   constructor(erroCampoDuplicado) {

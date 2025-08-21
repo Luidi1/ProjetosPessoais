@@ -1,4 +1,4 @@
-import ErroBase from "./erroBase.js";
+import ErroBase from "./ErroBase.js";
 
 class ErroConversaoDeTipo extends ErroBase{
     constructor(erroCast){
@@ -8,7 +8,7 @@ class ErroConversaoDeTipo extends ErroBase{
 
     enviarResposta(res) {
         return res.status(this.status).json({
-          message: `O campo {${this.erroCast.path}} recebeu um valor inválido.`
+          mensagem: `O campo {${this.erroCast.path}} recebeu um valor inválido.`
         });
     }
 }
