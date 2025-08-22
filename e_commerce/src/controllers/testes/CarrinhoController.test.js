@@ -1,31 +1,52 @@
+// <<< 1) Defina ambiente e carregue .env **antes** de qualquer import do app
+process.env.NODE_ENV = 'test';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.test' });
+
 import request from 'supertest';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import app from '../../app.js';
+// ⚠️ NÃO importe o app aqui; faremos import dinâmico depois do dotenv
+// import app from '../../app.js';
 
-dotenv.config({ path: '.env.test' });
 jest.setTimeout(20000);
 
+// Endereço padrão exigido pelo schema de Usuario
+const ENDERECO_FIXO = {
+  rua: 'Rua Teste',
+  numero: 1,
+  complemento: 'Sem complemento',
+  bairro: 'Centro',
+  cidade: 'Cidade X',
+  estado: 'SP',
+  cep: '00000-000',
+  pais: 'Brasil'
+};
+
 describe('CarrinhoController', () => {
-  let token;
-  let produtoId;
+  let token;      // token do usuário comum
+  let produtoId;  // produto criado pelo admin para usar no carrinho
+  let app;        // app carregado dinamicamente
 
   beforeAll(async () => {
-    // conecta ao banco de teste e espera a conexão
-    await mongoose.connect(process.env.MONGO_URI_TEST, { useNewUrlParser: true, useUnifiedTopology: true });
-    await new Promise(resolve => mongoose.connection.once('open', resolve));
+    // importa o app **depois** de setar NODE_ENV e carregar .env.test
+    const mod = await import('../../app.js');
+    app = mod.default;
+
+    // aguarda a conexão iniciada por app.js
+    await mongoose.connection.asPromise();
 
     // limpa o banco totalmente
     await mongoose.connection.dropDatabase();
 
-    // cria usuário comum e faz login para obter token
+    // cria usuário comum e faz login para obter token (AGORA com endereço)
     await request(app)
       .post('/usuarios')
       .send({
         nome: 'Teste Carrinho',
         data_nascimento: '1990-01-01',
         email: 'carrinho@test.com',
-        senha: 'senha123'
+        senha: 'senha123',
+        endereco: ENDERECO_FIXO
       });
 
     const loginRes = await request(app)
@@ -36,7 +57,7 @@ describe('CarrinhoController', () => {
       });
     token = loginRes.body.token;
 
-    // cria usuário administrador e faz login para obter adminToken
+    // cria usuário administrador e faz login para obter adminToken (AGORA com endereço)
     await request(app)
       .post('/usuarios')
       .send({
@@ -44,8 +65,10 @@ describe('CarrinhoController', () => {
         data_nascimento: '1980-01-01',
         email: 'admin.carrinho@test.com',
         senha: 'senha123',
-        perfil: 'ADMINISTRADOR'
+        perfil: 'ADMINISTRADOR',
+        endereco: ENDERECO_FIXO
       });
+
     const loginAdminRes = await request(app)
       .post('/usuarios/login')
       .send({
@@ -59,7 +82,8 @@ describe('CarrinhoController', () => {
       .post('/produtos')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ nome: 'Produto Test', preco: 100, estoque: 10 });
-    produtoId = prodRes.body.data._id;
+
+    produtoId = prodRes.body?.data?._id; // agora deve existir
   });
 
   afterAll(async () => {
@@ -80,7 +104,7 @@ describe('CarrinhoController', () => {
         .set('Authorization', `Bearer ${token}`);
       expect(res.statusCode).toBe(200);
       expect(res.body.itens).toEqual([]);
-      // agora espera '0,00' em vez de undefined
+      // espera '0,00' em vez de undefined
       expect(res.body.precoTotal).toBe('0,00');
     });
 

@@ -1,40 +1,60 @@
+// <<< 1) Defina ambiente e carregue .env **antes** de qualquer import do app
+process.env.NODE_ENV = 'test';
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 
 import request from 'supertest';
 import mongoose from 'mongoose';
-import app from '../../app.js';
+// ⚠️ NÃO importe o app aqui; faremos import dinâmico depois do dotenv
+// import app from '../../app.js';
 
 jest.setTimeout(30000);
+
+// Endereço exigido pelo schema de Usuario
+const ENDERECO_FIXO = {
+  rua: 'Rua Teste',
+  numero: 1,
+  complemento: 'Sem complemento',
+  bairro: 'Centro',
+  cidade: 'Cidade X',
+  estado: 'SP',
+  cep: '00000-000',
+  pais: 'Brasil'
+};
 
 describe('PedidoController', () => {
   let token;        // usuário comum
   let adminToken;   // usuário administrador
   let produtoId;
+  let app;          // app carregado dinamicamente
 
   beforeAll(async () => {
-    // Conecta ao banco de teste
-    await mongoose.connect(process.env.MONGO_URI_TEST, { useNewUrlParser: true, useUnifiedTopology: true });
-    await new Promise(resolve => mongoose.connection.once('open', resolve));
+    // Importa o app **depois** de setar NODE_ENV e carregar .env.test
+    const mod = await import('../../app.js');
+    app = mod.default;
+
+    // Aguarda a conexão aberta pelo app.js
+    await mongoose.connection.asPromise();
 
     // Limpa o banco
     await mongoose.connection.dropDatabase();
 
-    // 1) Cria usuário comum e faz login
+    // 1) Cria usuário comum e faz login (AGORA com endereço)
     await request(app)
       .post('/usuarios')
       .send({
         nome: 'Teste Pedido',
         data_nascimento: '1990-01-01',
         email: 'pedido@test.com',
-        senha: 'senha123'
+        senha: 'senha123',
+        endereco: ENDERECO_FIXO
       });
     const loginRes = await request(app)
       .post('/usuarios/login')
       .send({ email: 'pedido@test.com', senha: 'senha123' });
     token = loginRes.body.token;
 
-    // 2) Cria usuário administrador e faz login
+    // 2) Cria usuário administrador e faz login (AGORA com endereço)
     await request(app)
       .post('/usuarios')
       .send({
@@ -42,7 +62,8 @@ describe('PedidoController', () => {
         data_nascimento: '1980-01-01',
         email: 'admin@test.com',
         senha: 'senha123',
-        perfil: 'ADMINISTRADOR'
+        perfil: 'ADMINISTRADOR',
+        endereco: ENDERECO_FIXO
       });
     const loginAdminRes = await request(app)
       .post('/usuarios/login')
@@ -98,11 +119,10 @@ describe('PedidoController', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ produto: produtoId, quantidade: 2 });
 
-      // DEBUG: estado do carrinho após adicionar item
+      // DEBUG opcional
       const cartRes = await request(app)
         .get('/carrinho')
         .set('Authorization', `Bearer ${token}`);
-      console.log('Estado do carrinho após adicionar item:', cartRes.statusCode, cartRes.body);
 
       const res = await request(app)
         .post('/pedido')
@@ -127,6 +147,7 @@ describe('PedidoController', () => {
       expect(Array.isArray(pedido.itens)).toBe(true);
       expect(pedido.itens).toHaveLength(1);
       expect(pedido).toHaveProperty('valorTotal', '100,00');
+
       // Carrinho deve estar vazio após criação
       const cart = await request(app)
         .get('/carrinho')
