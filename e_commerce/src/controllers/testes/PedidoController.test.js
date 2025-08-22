@@ -36,9 +36,6 @@ describe('PedidoController', () => {
     // Aguarda a conexão aberta pelo app.js
     await mongoose.connection.asPromise();
 
-    // Limpa o banco
-    await mongoose.connection.dropDatabase();
-
     // 1) Cria usuário comum e faz login (AGORA com endereço)
     await request(app)
       .post('/usuarios')
@@ -79,7 +76,6 @@ describe('PedidoController', () => {
   });
 
   afterAll(async () => {
-    await mongoose.connection.dropDatabase();
     await mongoose.connection.close();
   });
 

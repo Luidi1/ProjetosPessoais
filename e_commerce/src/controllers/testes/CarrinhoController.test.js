@@ -35,9 +35,6 @@ describe('CarrinhoController', () => {
     // aguarda a conexão iniciada por app.js
     await mongoose.connection.asPromise();
 
-    // limpa o banco totalmente
-    await mongoose.connection.dropDatabase();
-
     // cria usuário comum e faz login para obter token (AGORA com endereço)
     await request(app)
       .post('/usuarios')
@@ -87,7 +84,6 @@ describe('CarrinhoController', () => {
   });
 
   afterAll(async () => {
-    await mongoose.connection.dropDatabase();
     await mongoose.connection.close();
   });
 
