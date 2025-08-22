@@ -3,20 +3,37 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 
 import request from 'supertest';
-import app from '../../app.js';
+// ⚠️ NÃO importe app aqui estaticamente; vamos carregar dinamicamente no beforeAll
+// import app from '../../app.js';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import Usuario from '../../models/Usuario.js';
 import Produto from '../../models/Produto.js';
 import { erroProdutoNaoEncontrado } from '../../utils/mensagensErroProduto.js';
 
+// endereço obrigatório pelo schema de Usuario
+const ENDERECO_FIXO = {
+  rua: 'Rua Teste',
+  numero: 1,
+  complemento: 'Sem complemento',
+  bairro: 'Centro',
+  cidade: 'Cidade X',
+  estado: 'SP',
+  cep: '00000-000',
+  pais: 'Brasil'
+};
+
 describe('Controller: ProdutoController', () => {
   let adminToken;
+  let app; // receberá o app carregado dinamicamente
 
   beforeAll(async () => {
-    // Conecta ao DB de teste
-    await mongoose.connect(process.env.MONGO_URI_TEST);
-    await new Promise(resolve => mongoose.connection.once('open', resolve));
+    // Carrega o app AGORA, depois de NODE_ENV e dotenv já setados
+    const mod = await import('../../app.js');
+    app = mod.default;
+
+    // Garante que a conexão aberta pelo app.js esteja pronta
+    await mongoose.connection.asPromise();
 
     // Cria um usuário administrador para autenticar as rotas de produto
     await Usuario.deleteMany({});
@@ -25,7 +42,8 @@ describe('Controller: ProdutoController', () => {
       email: 'admin.prod@example.com',
       senha: 'Pass123!',
       perfil: 'ADMINISTRADOR',
-      data_nascimento: '1990-01-01'
+      data_nascimento: '1990-01-01',
+      endereco: ENDERECO_FIXO
     });
     const JWT_SECRET = process.env.JWT_SECRET || 'testsecret';
     adminToken = jwt.sign(
@@ -55,7 +73,6 @@ describe('Controller: ProdutoController', () => {
     // agora esperamos a string formatada:
     expect(res.body.data.preco).toBe('5,00');
   });
-  
 
   it('deve listar todos os produtos', async () => {
     await Produto.create([
@@ -146,8 +163,6 @@ describe('Controller: ProdutoController', () => {
     expect(res.body.mensagem)
       .toBe(erroProdutoNaoEncontrado('ZZZ'));
   });
-  
-  
 
   it('deve retornar 400 para parâmetro inválido', async () => {
     const res = await request(app)

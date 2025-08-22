@@ -1,10 +1,9 @@
 // <<< 1) DEFINA O AMBIENTE ANTES DE QUALQUER IMPORT
 process.env.NODE_ENV = 'test';
 require('dotenv').config({ path: '.env.test' });
-process.env.MONGO_URI = process.env.MONGO_URI_TEST;
 
 import request from 'supertest';
-import app     from '../../app.js';             // só para GET e criação-prod
+// import app     from '../../app.js';             // ← REMOVIDO para evitar import antes do dotenv
 import mongoose from 'mongoose';
 import Usuario  from '../../models/Usuario.js';
 import jwt      from 'jsonwebtoken';
@@ -51,15 +50,21 @@ const ENDERECO_FIXO = {
   pais: 'Brasil'
 };
 
-// ——— Conecta e desconecta uma vez —————————————
+// ─── app será carregado dinamicamente após o dotenv ─────────────────────────────
+let app;
+
+// ——— Conecta (via app.js) e fecha uma única vez —————————————
 beforeAll(async () => {
-  await mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser:    true,
-    useUnifiedTopology: true
-  });
+  // carrega o app **depois** do dotenv
+  const mod = await import('../../app.js');
+  app = mod.default;
+
+  // NÃO chamamos mongoose.connect aqui — só aguardamos a conexão do app
+  await mongoose.connection.asPromise();
 });
+
 afterAll(async () => {
-  await mongoose.connection.close();
+  await mongoose.connection.close(true);
 });
 
 // ——— Suítes de GET (mantidas iguais) ————————————
@@ -365,16 +370,15 @@ describe('Rota: GET /usuarios/busca (listarUsuariosPorBusca)', () => {
   });
 });
 
-// ——— Suíte de criação em produção ————————————
+// ——— Suíte de criação (reutilizando o mesmo app) ————————————
 describe('Rota: POST /usuarios — criação e validação de campos obrigatórios', () => {
   let prodApp, adminTokenProd;
 
   beforeAll(async () => {
-    jest.resetModules();
+    // reutiliza o MESMO app (não reimporta para não abrir outra conexão)
+    prodApp = app;
 
-    prodApp = require('../../app.js').default;
-
-    const UsuarioProd = require('../../models/Usuario.js').default;
+    const UsuarioProd = Usuario;
     await UsuarioProd.deleteMany({});
 
     const fixtureEndereco = {
@@ -495,11 +499,6 @@ describe('Rota: POST /usuarios — criação e validação de campos obrigatóri
       }
     }
   );
-
-  afterAll(() => {
-    jest.resetModules();
-    process.env.NODE_ENV = 'test';
-  });
 });
 
 
@@ -671,10 +670,6 @@ describe('Rota: PUT /usuarios/:id (atualizarUsuario)', () => {
     otherUserId = other._id.toString();
   });
 
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
-
   test('Admin atualiza todos os campos com sucesso', async () => {
     const payload = {
       nome: 'NovoOther',
@@ -784,7 +779,7 @@ describe('Rota: PUT /usuarios/:id (atualizarUsuario)', () => {
       const u0 = await Usuario.create({
         nome: 'Orig',
         email: emailUnico,
-        senha: userPassword,
+        senha: 'Pass123!',
         perfil: 'CLIENTE',
         data_nascimento: '1990-01-01',
         endereco: ENDERECO_FIXO
@@ -826,18 +821,7 @@ describe('Rota: DELETE /usuarios/:id (deletarUsuario)', () => {
   let adminToken, userToken;
   let adminId, userId, otherUserId;
 
-  beforeAll(async () => {
-    // Conecta ao banco
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser:    true,
-      useUnifiedTopology: true
-    });
-  });
-
-  afterAll(async () => {
-    // Fecha conexão
-    await mongoose.connection.close();
-  });
+  // (sem beforeAll/afterAll de conexão aqui — conexão já está aberta globalmente)
 
   beforeEach(async () => {
     // Limpa coleção e recria usuários para isolar estado
@@ -944,18 +928,7 @@ describe('Rota: DELETE /usuarios/:id (deletarUsuario)', () => {
     let adminToken, userToken;
     let adminId, user1Id, user2Id;
   
-    // Conecta ao banco antes de tudo
-    beforeAll(async () => {
-      await mongoose.connect(process.env.MONGO_URI, {
-        useNewUrlParser:    true,
-        useUnifiedTopology: true
-      });
-    });
-  
-    // Fecha conexão ao final
-    afterAll(async () => {
-      await mongoose.connection.close();
-    });
+    // (sem beforeAll/afterAll de conexão aqui — conexão já está aberta globalmente)
   
     // Função para preparar 3 usuários (admin, user e other) e seus tokens
     const setupUsuarios = async () => {
