@@ -16,6 +16,7 @@ export const usuarioSchema = new mongoose.Schema(
     nome: {
       type: String,
       required: !isDev ? [true, erroCampoObrigatorio("Nome")] : false,
+      match: [/^[A-Za-zÀ-ÿ\s]+$/, "O campo 'nome' deve conter apenas letras."]
     },
     data_nascimento: {
       type: Date,
@@ -49,7 +50,7 @@ export const usuarioSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: !isDev ? [true, erroCampoObrigatorio("Email")] : false,
+     required: [true, erroCampoObrigatorio("Email")],
       unique: true,
       lowercase: true,
       trim: true,
@@ -62,14 +63,14 @@ export const usuarioSchema = new mongoose.Schema(
     },
     senha: {
       type: String,
-      required: !isDev ? [true, erroCampoObrigatorio("Senha")] : false,
+      required: [true, erroCampoObrigatorio("Senha")],
     },
     perfil: {
       type: String,
       uppercase: true,
       enum: {
         values: PERFIS,
-        message: (props) =>
+        message: () =>
           `Perfil inválido. Os valores permitidos são: ${concatenarItensComVirgulaAndE(
             PERFIS
           )}.`,

@@ -15,7 +15,6 @@ export default class ErroValidacao extends ErroBase {
 
   enviarResposta(res) {
 
-
     // 1) Descobre nome do modelo (útil para ordernar campos do schema)
     const modelName = getModelNameFromError(this.erroValidacao);
 
@@ -93,6 +92,7 @@ function mapFieldLabel(campo) {
   }
 }
 
+
 function getModelNameFromError(validationError) {
   if (validationError._message) {
     return validationError._message.replace(" validation failed", "");
@@ -107,10 +107,5 @@ function getFieldsInSchemaOrder(schema) {
 }
 
 function formatarSubErro(field, subErro) {
-  if (subErro.name === "CastError") {
-    return `O campo ${mapFieldLabel(
-      field
-    )} recebeu tipo inválido (valor: ${subErro.value}).`;
-  }
   return subErro.message;
 }

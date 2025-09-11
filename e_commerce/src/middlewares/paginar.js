@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import ErroRequisicao from '../erros/ErroRequisicao.js';
 import { formatarListaDeMensagens } from '../utils/formatarMensagens.js';
 

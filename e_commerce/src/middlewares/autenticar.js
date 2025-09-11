@@ -21,7 +21,7 @@ export default async function autenticar(req, res, next) {
   const token = parts[1];
   try {
     // Usa fallback para 'testsecret' quando JWT_SECRET não estiver definido em test
-    const secret  = process.env.JWT_SECRET || 'testsecret';
+    const secret  = process.env.JWT_SECRET;
     const payload = jwt.verify(token, secret);
 
     // Busca o usuário no banco para checar verificação de e-mail

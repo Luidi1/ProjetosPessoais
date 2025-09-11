@@ -253,58 +253,63 @@ static confirmarUsuario = async (req, res, next) => {
 
   // Função para login
   static logarUsuario = async (req, res, next) => {
-    try {
-      const { email, senha } = req.body;
+  try {
+    const { email, senha } = req.body;
 
-      // 1) Validação de campos obrigatórios
-      const camposFaltando = [];
-      if (!email) camposFaltando.push('Email');
-      if (!senha) camposFaltando.push('Senha');
+    // 1) Validação de campos obrigatórios
+    const camposFaltando = [];
+    if (!email) camposFaltando.push('Email');
+    if (!senha) camposFaltando.push('Senha');
 
-      if (camposFaltando.length > 0) {
-        const mensagem = camposFaltando.length > 1
-          ? erroCamposObrigatorios(camposFaltando)
-          : erroCampoObrigatorio(camposFaltando[0]);
-        return res.status(400).json({ message: mensagem });
-      }
-
-      // 2) Validação de formato de e-mail
-      if (!EhEmailValido(email)) {
-        return res.status(400).json({ message: erroFormatoEmail('email') });
-      }
-
-      // 3) Procura o usuário pelo e-mail
-      const usuario = await Usuario.findOne({ email });
-      if (!usuario) {
-        return res
-          .status(401)
-          .json({ message: 'Email não encontrado no sistema.' });
-      }
-
-      // 4) Verifica se a senha está correta
-      const senhaValida = await bcrypt.compare(senha, usuario.senha);
-      if (!senhaValida) {
-        return res
-          .status(401)
-          .json({ message: 'Senha incorreta.' });
-      }
-
-      // 5) Gera o token JWT
-      const token = jwt.sign(
-        { id: usuario._id, email: usuario.email, perfil: usuario.perfil },
-        process.env.JWT_SECRET
-      );
-
-      // 6) Retorna sucesso
-      res.status(200).json({
-        message: 'Login realizado com sucesso.',
-        token,
-      });
-    } catch (erro) {
-      console.error(erro);
-      next(erro);
+    if (camposFaltando.length > 0) {
+      const mensagem = camposFaltando.length > 1
+        ? erroCamposObrigatorios(camposFaltando)
+        : erroCampoObrigatorio(camposFaltando[0]);
+      return res.status(400).json({ message: mensagem });
     }
-  };
+
+    // 2) Validação de formato de e-mail
+    if (!EhEmailValido(email)) {
+      return res.status(400).json({ message: erroFormatoEmail('email') });
+    }
+
+    // 3) Procura o usuário pelo e-mail
+    const usuario = await Usuario.findOne({ email });
+    if (!usuario) {
+      return res
+        .status(401)
+        .json({ message: 'Email não encontrado no sistema.' });
+    }
+
+    // 3.1) Verifica se o e-mail foi confirmado
+    if (!usuario.isVerified) {
+      throw new ErroRequisicao("Erro: Confirme seu e-mail antes de acessar.");
+    }
+
+    // 4) Verifica se a senha está correta
+    const senhaValida = await bcrypt.compare(senha, usuario.senha);
+    if (!senhaValida) {
+      return res
+        .status(401)
+        .json({ message: 'Senha incorreta.' });
+    }
+
+    // 5) Gera o token JWT
+    const token = jwt.sign(
+      { id: usuario._id, email: usuario.email, perfil: usuario.perfil },
+      process.env.JWT_SECRET
+    );
+
+    // 6) Retorna sucesso
+    res.status(200).json({
+      message: 'Login realizado com sucesso.',
+      token,
+    });
+  } catch (erro) {
+    next(erro);
+  }
+};
+
 }
 
 export default UsuarioController;

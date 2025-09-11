@@ -9,11 +9,11 @@ export default function reordenaJson(req, res, next) {
         return convert(obj.toObject({ virtuals: true }));
       }
       if (Array.isArray(obj)) {
-        return obj.map(convert);
+        return obj.map(convert); //Equivalente a: map((item) => convert(item))
       }
       if (obj && obj.constructor === Object) {
         const ret = {};
-        for (const key of Object.keys(obj)) ret[key] = convert(obj[key]);
+        for (const key of Object.keys(obj)) ret[key] = convert(obj[key]); //E se tivesse return antes do convert? Oq aconteceria?
         return ret;
       }
       return obj;

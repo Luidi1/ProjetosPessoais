@@ -3,7 +3,7 @@ import { concatenarItensComVirgulaAndE } from './formatarMensagens.js';
 
 // Parâmetros duplicados
 export const erroParamDuplicado = (param) =>
-    `O parâmetro {${param}} foi informado várias vezes.`;
+    `O parâmetro {${param}} foi informado mais de uma vez.`;
   
 // Parâmetro inexistente (1)
 export const erroParamInexistente = (param, validosStr) =>
