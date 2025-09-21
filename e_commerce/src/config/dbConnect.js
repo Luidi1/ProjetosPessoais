@@ -11,10 +11,13 @@ async function connectDB() {
       console.log("Conexão com o banco feita com sucesso")
     );
 
-    const uri =
-      process.env.NODE_ENV === "test"
-        ? process.env.MONGO_URI_TEST
-        : process.env.STRING_CONEXAO_DB;
+  const uri =
+    process.env.NODE_ENV === "test"
+      ? process.env.MONGO_URI_TEST
+      : process.env.NODE_ENV === "production"
+        ? process.env.STRING_CONEXAO_PROD   // definido no .env.prod
+        : process.env.STRING_CONEXAO_DB;    // definido no .env (dev)
+
 
     await mongoose.connect(uri);
     return db;

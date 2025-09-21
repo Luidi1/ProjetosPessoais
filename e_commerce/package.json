@@ -16,7 +16,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon server.js",
+    "dev": "cross-env NODE_ENV=development nodemon server.js",
     "test": "cross-env NODE_ENV=test jest --config jest.config.cjs",
     "test:produto": "jest src/models/testes/Produto.test.js --config jest.config.cjs",
     "test:usuario": "jest src/models/testes/Usuario.test.js --config jest.config.cjs",
@@ -34,6 +34,7 @@
     "@babel/core": "^7.26.9",
     "@babel/preset-env": "^7.26.9",
     "babel-jest": "^29.7.0",
+    "cross-env": "^10.0.0",
     "jest": "^29.7.0",
     "mongodb-memory-server": "^10.1.4",
     "supertest": "^7.1.0"

@@ -107,6 +107,7 @@ class UsuarioController {
     if (erro.code === 11000) {
       return next(new ErroCampoDuplicado(erro));
     }
+    console.error(erro);
     next(erro);
   }
 };

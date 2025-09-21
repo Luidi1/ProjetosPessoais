@@ -29,7 +29,6 @@ export function anexarUsuarioHooks(usuarioSchema) {
       if (process.env.NODE_ENV !== 'development') {
         return next();
       }
-
       // 2) Auto-fill de nome e data_nascimento
       if (!this.nome || !this.data_nascimento) {
         const count = await this.constructor.countDocuments();
@@ -58,7 +57,7 @@ export function anexarUsuarioHooks(usuarioSchema) {
         }
       }
 
-      // 3) Auto-fill de endereco no ambiente dev/test
+      // 3) Auto-fill de endereco no ambiente dev
       if (!this.endereco || Object.keys(this.endereco).length === 0) {
         this.endereco = {
           rua: 'Rua Teste',
@@ -71,7 +70,6 @@ export function anexarUsuarioHooks(usuarioSchema) {
           pais: 'Brasil'
         };
       }
-
       return next();
     } catch (err) {
       return next(err);

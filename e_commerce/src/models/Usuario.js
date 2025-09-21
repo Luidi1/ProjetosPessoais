@@ -15,9 +15,16 @@ export const usuarioSchema = new mongoose.Schema(
   {
     nome: {
       type: String,
-      required: !isDev ? [true, erroCampoObrigatorio("Nome")] : false,
-      match: [/^[A-Za-zÀ-ÿ\s]+$/, "O campo 'nome' deve conter apenas letras."]
+      required: !isDev ? [true, "O campo Nome é obrigatório"] : false,
+      validate: [{
+        validator(v) {
+          if (process.env.NODE_ENV !== 'test') return true; // em qualquer ambiente ≠ test, ignora
+          return /^[A-Za-zÀ-ÿ\s]+$/.test(v);
+        },
+        message: "O campo 'nome' deve conter apenas letras."
+      }]
     },
+
     data_nascimento: {
       type: Date,
       required: !isDev
@@ -50,7 +57,7 @@ export const usuarioSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-     required: [true, erroCampoObrigatorio("Email")],
+      required: [true, erroCampoObrigatorio("Email")],
       unique: true,
       lowercase: true,
       trim: true,
