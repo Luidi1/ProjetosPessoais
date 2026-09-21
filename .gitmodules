@@ -1,6 +1,6 @@
 [submodule "AlgoritmosCompressao"]
 	path = AlgoritmosCompressao
-	url = git@github.com:Luidi1/AlgoritmosCompressao.git
+	url = https://github.com/Luidi1/AlgoritmosCompressao.git
 [submodule "meuCli"]
 	path = meuCli
 	url = https://github.com/Luidi1/meuCli.git
