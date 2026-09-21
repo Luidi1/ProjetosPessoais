@@ -7,3 +7,6 @@
 [submodule "meuCLI"]
 	path = meuCLI
 	url = https://github.com/Luidi1/meuCli.git
+[submodule "AdocaoPets"]
+	path = AdocaoPets
+	url = https://github.com/Luidi1/AdocaoPets.git
